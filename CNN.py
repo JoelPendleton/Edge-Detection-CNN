@@ -19,8 +19,8 @@ path = 'Training_Input'
 num_files = len(os.listdir(path))
 
 # Set some parameters
-IMG_WIDTH = 512
-IMG_HEIGHT = 512
+IMG_WIDTH = 128
+IMG_HEIGHT = 128
 IMG_CHANNELS = 3
 
 N_train = num_files # Number of training examples
@@ -41,13 +41,6 @@ for i in range(1,N_train):
     # Use == 1 to convert to boolean
     Y_train[i] = y[:, :, np.newaxis]  # Add training output to array
 
-'''
-# Check if training data looks all right
-ix = random.randint(0, num_files)
-plt.imshow(X_train[ix])
-plt.show()
-plt.imshow(np.squeeze(Y_train[ix]))
-plt.show()'''
 
 model_exists = os.path.exists('model_unet_checkpoint.h5')
 
@@ -132,12 +125,15 @@ else:  # If model hasn't been trained create model
 
 model.summary()
 
+ask_train = input("Do you want to train your model? [Y/N] ") # Ask user if they want to train their model
 
-# Fit model
-earlystopper = EarlyStopping(patience=15, verbose=1)
-checkpointer = ModelCheckpoint('model_unet_checkpoint.h5', verbose=1, save_best_only=True)
-results = model.fit(X_train, Y_train, validation_split=0.1, batch_size=16, epochs=100,
-                        callbacks=[earlystopper, checkpointer])
+
+if ask_train == "Y":
+    # Fit model
+    earlystopper = EarlyStopping(patience=15, verbose=1)
+    checkpointer = ModelCheckpoint('model_unet_checkpoint.h5', verbose=1, save_best_only=True)
+    results = model.fit(X_train, Y_train, validation_split=0.1, batch_size=16, epochs=100,
+                            callbacks=[earlystopper, checkpointer])
 
 
 # Predict on train, val and test
@@ -148,12 +144,9 @@ preds_val = model.predict(X_train[int(X_train.shape[0]*0.9):], verbose=1)
 preds_train_t = (preds_train > 0.5).astype(np.uint8)
 preds_val_t = (preds_val > 0.5).astype(np.uint8)
 
-# Perform a sanity check on some random training samples
-ix = random.randint(0, num_files)
-plt.imshow(X_train[ix])
-plt.show()
-plt.imshow(np.squeeze(Y_train[ix]), cmap ='gray')
-plt.show()
-plt.imshow(np.squeeze(preds_train_t[ix]),  cmap ='gray')
-plt.show()
+# Save training example predictions 128 x 128 px images
+for i in range(int(N_train * 0.9)):
+    # Perform a sanity check on some random training samples
+    plt.imsave("./Training_Prediction/prediction_{0}.png".format(i+1), np.squeeze(preds_train_t[i]),  cmap ='gray')
 
+print("Program finished running. Training example predictions saved in Training_Prediction folder.")
