@@ -143,10 +143,10 @@ for i in range(len(indices)-1):
     condition_1_2 = condition1 & condition2
     condition_3_4 = condition3 & condition4
     total_condition = condition_1_2 | condition_3_4
-    negative_line_index = np.argwhere(total_condition)[0,0] # Get index of 1st line that satisfies these conditions
+    positive_line_index = np.argwhere(total_condition)[0,0] # Get index of 1st line that satisfies these conditions
 
     # plot +ve gradient lines
-    x1, y1, x2, y2 = line_plotter(lines, negative_line_index, x1_pos_prev, x2_pos_prev, y1_pos_prev,  y2_pos_prev)
+    x1, y1, x2, y2 = line_plotter(lines, positive_line_index, x1_pos_prev, x2_pos_prev, y1_pos_prev,  y2_pos_prev)
 
     # Update previous positive line's coordinates
     x1_pos_prev = x1
