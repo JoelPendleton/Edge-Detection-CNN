@@ -1,0 +1,105 @@
+{
+    "diamonds": [
+        {
+            "diamond number": 1,
+            "width of diamond": 0.07487091222030981,
+            "positive line slopes": [
+                0.9038458384583846
+            ],
+            "negative line slopes": [
+                -11.824171122994652
+            ],
+            "positive line x-intercepts": [
+                0.11565704218846908
+            ],
+            "negative line x-intercepts": [
+                0.11556349809361859
+            ]
+        },
+        {
+            "diamond number": 2,
+            "width of diamond": 0.037435456110154905,
+            "positive line slopes": [
+                0.9038458384583846
+            ],
+            "negative line slopes": [
+                -23.648342245989305
+            ],
+            "positive line x-intercepts": [
+                0.1905279544087789
+            ],
+            "negative line x-intercepts": [
+                0.19139492332263416
+            ]
+        },
+        {
+            "diamond number": 3,
+            "width of diamond": 0.031841652323580036,
+            "positive line slopes": [
+                0.9038458384583846
+            ],
+            "negative line slopes": [
+                -23.648342245989305
+            ],
+            "positive line x-intercepts": [
+                0.2279634105189338
+            ],
+            "negative line x-intercepts": [
+                0.2288303794327891
+            ]
+        },
+        {
+            "diamond number": 4,
+            "width of diamond": 0.023666092943201378,
+            "positive line slopes": [
+                0.9038458384583846
+            ],
+            "negative line slopes": [
+                -23.648342245989305
+            ],
+            "positive line x-intercepts": [
+                0.2598050628425138
+            ],
+            "negative line x-intercepts": [
+                0.26067203175636916
+            ]
+        },
+        {
+            "diamond number": 5,
+            "width of diamond": 0.03098106712564544,
+            "positive line slopes": [
+                0.9038458384583846
+            ],
+            "negative line slopes": [
+                -23.648342245989305
+            ],
+            "positive line x-intercepts": [
+                0.2834711557857152
+            ],
+            "negative line x-intercepts": [
+                0.28433812469957054
+            ]
+        },
+        {
+            "diamond number": 6,
+            "width of diamond": 0.02667814113597246,
+            "positive line slopes": [
+                0.9038458384583846,
+                0.9049589490968801
+            ],
+            "negative line slopes": [
+                -23.648342245989305,
+                -11.646974088713218
+            ],
+            "positive line x-intercepts": [
+                0.31445222291136066,
+                0.34093501214999256
+            ],
+            "negative line x-intercepts": [
+                0.31531919182521595,
+                0.3409869537524876
+            ],
+            "height": 0.022164502164502164
+        }
+    ]
+}
