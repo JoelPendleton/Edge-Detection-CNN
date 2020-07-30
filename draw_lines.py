@@ -6,7 +6,7 @@ import json
 data = {}  # create 'data' dictonary to store json data
 data['diamonds'] = []
 
-x_image = cv2.imread('Training_Output/output_13.png')
+x_image = cv2.imread('Training_Output/output_10.png')
 img = cv2.bitwise_not(x_image)
 x = edges = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
@@ -107,7 +107,7 @@ def line_coordinates(lines, index):
         b = np.sin(theta)
         x0 = a * rho
         y0 = b * rho
-        x1 = int(x0 + 1000 * (-b)) + indices[i]
+        x1 = int(x0 + 1000 * (-b)) + indices[i] # indices[i] added to account for fact cropped diamonds
         y1 = int(y0 + 1000 * a)
         x2 = int(x0 - 1000 * (-b)) + indices[i]
         y2 = int(y0 - 1000 * a)
@@ -207,12 +207,12 @@ for i in range(len(indices)-1):
                 diamond['negative line x-intercepts'].append(x_intercept * V_G_per_pixel)
                 break
 
-        if i >= 1:
-            '''b1_pos, b2_pos describes previous positive grad. line that intersects
-             the start of previous diamond. a1, a2 describes the negative slope of the line that intersects 
-              the start of the current diamond'''
-            intersection = get_intersect(a1, a2, b1_pos, b2_pos)
-            diamond['height'] = abs(int(intersection[1] - y_axis_index)) * V_SD_per_pixel
+    if i >= 1:
+        '''b1_pos, b2_pos describes previous positive grad. line that intersects
+         the start of previous diamond. a1, a2 describes the negative slope of the line that intersects 
+          the start of the current diamond'''
+        intersection = get_intersect(a1, a2, b1_pos, b2_pos)
+        diamond['height'] = abs(int(intersection[1] - y_axis_index)) * V_SD_per_pixel
 
     if i == (len(indices) - 2): # if dealing with last diamond
         for index in negative_line_indexes:  # for each of the negative slope positive lines
