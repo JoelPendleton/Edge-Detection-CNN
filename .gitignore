@@ -1,4 +1,4 @@
-Training_Input/
-Training_Output/
+Training_Data/Training_Input
+Training_Data/Training_Output
 Training_Prediction/
 .idea

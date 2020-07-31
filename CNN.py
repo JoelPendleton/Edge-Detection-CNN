@@ -26,7 +26,7 @@ try:
         # seed random number generator
         random.seed(datetime.now())  # use current time as random number seed
 
-        path = 'Training_Input'
+        path = 'Training_Data/Training_Input'
         num_files = len(os.listdir(path))
 
         # Set some parameters
@@ -42,11 +42,11 @@ try:
 
         # Load in training examples
         for i in range(1, N_train):
-            x_image = Image.open('Training_Input/input_{}.png'.format(i)).convert("RGB").resize((IMG_WIDTH, IMG_HEIGHT))
+            x_image = Image.open('Training_Data/Training_Input/input_{}.png'.format(i)).convert("RGB").resize((IMG_WIDTH, IMG_HEIGHT))
             x = np.array(x_image)
             X_train[i] = x
 
-            y_image = Image.open('Training_Output/output_{}.png'.format(i)).convert("L").resize((IMG_WIDTH, IMG_HEIGHT))
+            y_image = Image.open('Training_Data/Training_Output/output_{}.png'.format(i)).convert("L").resize((IMG_WIDTH, IMG_HEIGHT))
             # convert("L") reduces to single channel greyscale, resize reduces resolution to IMG_WIDTH x IMG_HEIGHT
             y = (np.array(y_image) / 255 == 1)  # divide by 255 as np.array puts white as 255 and black as 0.
             # Use == 1 to convert to boolean
@@ -143,6 +143,10 @@ try:
             print("Program finished running. The CNN has been trained.")
 
         if train_or_predict == "--predict":
+
+            if not os.path.exists("Training_Data/Training_Prediction"):
+                os.makedirs("Training_Data/Training_Prediction")
+
             # Predict on train, val and test
             preds_train = model.predict(X_train[:int(X_train.shape[0]*0.9)], verbose=1)
             preds_val = model.predict(X_train[int(X_train.shape[0]*0.9):], verbose=1)
@@ -154,7 +158,7 @@ try:
             # Save training example predictions 128 x 128 px images
             for i in range(int(N_train * 0.9)):
                 # Perform a sanity check on some random training samples
-                plt.imsave("./Training_Prediction/prediction_{0}.png".format(i+1), np.squeeze(preds_train_t[i]),  cmap ='gray')
+                plt.imsave("Training_Data/Training_Prediction/prediction_{0}.png".format(i+1), np.squeeze(preds_train_t[i]),  cmap ='gray')
 
             print("Program finished running. Training example predictions saved in Training_Prediction folder.")
     else:
