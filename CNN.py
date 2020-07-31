@@ -11,142 +11,157 @@ from datetime import datetime
 from PIL import Image
 import os.path
 import random
-
-# seed random number generator
-random.seed(datetime.now())  # use current time as random number seed
-
-path = 'Training_Input'
-num_files = len(os.listdir(path))
-
-# Set some parameters
-IMG_WIDTH = 128
-IMG_HEIGHT = 128
-IMG_CHANNELS = 3
-
-N_train = num_files # Number of training examples
-
-# Define dimensions of training examples
-X_train = np.zeros((N_train, IMG_HEIGHT, IMG_WIDTH, IMG_CHANNELS), dtype=np.uint8)
-Y_train = np.zeros((N_train, IMG_HEIGHT, IMG_WIDTH, 1), dtype=bool)
-
-# Load in training examples
-for i in range(1,N_train):
-    x_image = Image.open('Training_Input/input_{}.png'.format(i)).convert("RGB").resize((IMG_WIDTH, IMG_HEIGHT))
-    x = np.array(x_image)
-    X_train[i] = x
-
-    y_image = Image.open('Training_Output/output_{}.png'.format(i)).convert("L").resize((IMG_WIDTH, IMG_HEIGHT))
-    # convert("L") reduces to single channel greyscale, resize reduces resolution to IMG_WIDTH x IMG_HEIGHT
-    y = (np.array(y_image) / 255 == 1)  # divide by 255 as np.array puts white as 255 and black as 0.
-    # Use == 1 to convert to boolean
-    Y_train[i] = y[:, :, np.newaxis]  # Add training output to array
+import sys
 
 
-model_exists = os.path.exists('model_unet_checkpoint.h5')
+try:
 
+    train_or_predict = sys.argv[1]
+    if train_or_predict == '--help':
+        print("Make sure when you call this file you pass a flag.\n"
+              "--train trains CNN on examples\n"
+              "--predict generates predictions on training examples and validation set using CNN")
+    elif train_or_predict == "--train" or train_or_predict == "--predict":
 
-if model_exists:  # If model has already been trained, load model
-    model = load_model('model_unet_checkpoint.h5')
-else:  # If model hasn't been trained create model
+        # seed random number generator
+        random.seed(datetime.now())  # use current time as random number seed
 
-    # Build U-Net model
-    inputs = Input((IMG_HEIGHT, IMG_WIDTH, IMG_CHANNELS))
-    s = Lambda(lambda x: x / 255)(inputs)
+        path = 'Training_Input'
+        num_files = len(os.listdir(path))
 
-    c1 = Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same') (s)
-    c1 = BatchNormalization()(c1)
-    c1 = Dropout(0.1) (c1)
-    c1 = Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same') (c1)
-    c1 = BatchNormalization()(c1)
-    p1 = MaxPooling2D((2, 2)) (c1)
+        # Set some parameters
+        IMG_WIDTH = 128
+        IMG_HEIGHT = 128
+        IMG_CHANNELS = 3
 
-    c2 = Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same') (p1)
-    c2 = BatchNormalization()(c2)
-    c2 = Dropout(0.1) (c2)
-    c2 = Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same') (c2)
-    c2 = BatchNormalization()(c2)
-    p2 = MaxPooling2D((2, 2)) (c2)
+        N_train = num_files  # Number of training examples
 
-    c3 = Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same') (p2)
-    c3 = BatchNormalization()(c3)
-    c3 = Dropout(0.2) (c3)
-    c3 = Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same') (c3)
-    c3 = BatchNormalization()(c3)
-    p3 = MaxPooling2D((2, 2)) (c3)
+        # Define dimensions of training examples
+        X_train = np.zeros((N_train, IMG_HEIGHT, IMG_WIDTH, IMG_CHANNELS), dtype=np.uint8)
+        Y_train = np.zeros((N_train, IMG_HEIGHT, IMG_WIDTH, 1), dtype=bool)
 
-    c4 = Conv2D(256, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same') (p3)
-    c4 = BatchNormalization()(c4)
-    c4 = Dropout(0.2) (c4)
-    c4 = Conv2D(256, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same') (c4)
-    c4 = BatchNormalization()(c4)
-    p4 = MaxPooling2D(pool_size=(2, 2)) (c4)
+        # Load in training examples
+        for i in range(1, N_train):
+            x_image = Image.open('Training_Input/input_{}.png'.format(i)).convert("RGB").resize((IMG_WIDTH, IMG_HEIGHT))
+            x = np.array(x_image)
+            X_train[i] = x
 
-    c5 = Conv2D(512, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same') (p4)
-    c5 = BatchNormalization()(c5)
-    c5 = Dropout(0.3) (c5)
-    c5 = Conv2D(512, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same') (c5)
-    c5 = BatchNormalization()(c5)
+            y_image = Image.open('Training_Output/output_{}.png'.format(i)).convert("L").resize((IMG_WIDTH, IMG_HEIGHT))
+            # convert("L") reduces to single channel greyscale, resize reduces resolution to IMG_WIDTH x IMG_HEIGHT
+            y = (np.array(y_image) / 255 == 1)  # divide by 255 as np.array puts white as 255 and black as 0.
+            # Use == 1 to convert to boolean
+            Y_train[i] = y[:, :, np.newaxis]  # Add training output to array
 
-    u6 = Conv2DTranspose(128, (2, 2), strides=(2, 2), padding='same') (c5)
-    u6 = concatenate([u6, c4])
-    c6 = Conv2D(256, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same') (u6)
-    c6 = BatchNormalization()(c6)
-    c6 = Dropout(0.2) (c6)
-    c6 = Conv2D(256, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same') (c6)
-    c6 = BatchNormalization()(c6)
+        model_exists = os.path.exists('model_unet_checkpoint.h5')
 
-    u7 = Conv2DTranspose(64, (2, 2), strides=(2, 2), padding='same') (c6)
-    u7 = concatenate([u7, c3])
-    c7 = Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same') (u7)
-    c7 = BatchNormalization()(c7)
-    c7 = Dropout(0.2) (c7)
-    c7 = Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same') (c7)
-    c7 = BatchNormalization()(c7)
+        if model_exists:  # If model has already been trained, load model
+            model = load_model('model_unet_checkpoint.h5')
+        else:  # If model hasn't been trained create model
 
-    u8 = Conv2DTranspose(32, (2, 2), strides=(2, 2), padding='same') (c7)
-    u8 = concatenate([u8, c2])
-    c8 = Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same') (u8)
-    c8 = BatchNormalization()(c8)
-    c8 = Dropout(0.1) (c8)
-    c8 = Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same') (c8)
-    c8 = BatchNormalization()(c8)
+            # Build U-Net model
+            inputs = Input((IMG_HEIGHT, IMG_WIDTH, IMG_CHANNELS))
+            s = Lambda(lambda x: x / 255)(inputs)
 
-    u9 = Conv2DTranspose(16, (2, 2), strides=(2, 2), padding='same') (c8)
-    u9 = concatenate([u9, c1], axis=3)
-    c9 = Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same') (u9)
-    c9 = BatchNormalization()(c9)
-    c9 = Dropout(0.1) (c9)
-    c9 = Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same') (c9)
-    c9 = BatchNormalization()(c9)
+            c1 = Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(s)
+            c1 = BatchNormalization()(c1)
+            c1 = Dropout(0.1)(c1)
+            c1 = Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c1)
+            c1 = BatchNormalization()(c1)
+            p1 = MaxPooling2D((2, 2))(c1)
 
-    outputs = Conv2D(1, (1, 1), activation='sigmoid') (c9)
-    model = Model(inputs=[inputs], outputs=[outputs])
-    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+            c2 = Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(p1)
+            c2 = BatchNormalization()(c2)
+            c2 = Dropout(0.1)(c2)
+            c2 = Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c2)
+            c2 = BatchNormalization()(c2)
+            p2 = MaxPooling2D((2, 2))(c2)
 
-model.summary()
+            c3 = Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(p2)
+            c3 = BatchNormalization()(c3)
+            c3 = Dropout(0.2)(c3)
+            c3 = Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c3)
+            c3 = BatchNormalization()(c3)
+            p3 = MaxPooling2D((2, 2))(c3)
 
-ask_train = input("Do you want to train your model? [Y/N] ") # Ask user if they want to train their model
+            c4 = Conv2D(256, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(p3)
+            c4 = BatchNormalization()(c4)
+            c4 = Dropout(0.2)(c4)
+            c4 = Conv2D(256, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c4)
+            c4 = BatchNormalization()(c4)
+            p4 = MaxPooling2D(pool_size=(2, 2))(c4)
 
+            c5 = Conv2D(512, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(p4)
+            c5 = BatchNormalization()(c5)
+            c5 = Dropout(0.3)(c5)
+            c5 = Conv2D(512, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c5)
+            c5 = BatchNormalization()(c5)
 
-if ask_train == "Y":
-    # Fit model
-    earlystopper = EarlyStopping(patience=15, verbose=1)
-    checkpointer = ModelCheckpoint('model_unet_checkpoint.h5', verbose=1, save_best_only=True)
-    results = model.fit(X_train, Y_train, validation_split=0.1, batch_size=16, epochs=100,
-                            callbacks=[earlystopper, checkpointer])
+            u6 = Conv2DTranspose(128, (2, 2), strides=(2, 2), padding='same')(c5)
+            u6 = concatenate([u6, c4])
+            c6 = Conv2D(256, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(u6)
+            c6 = BatchNormalization()(c6)
+            c6 = Dropout(0.2)(c6)
+            c6 = Conv2D(256, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c6)
+            c6 = BatchNormalization()(c6)
 
+            u7 = Conv2DTranspose(64, (2, 2), strides=(2, 2), padding='same')(c6)
+            u7 = concatenate([u7, c3])
+            c7 = Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(u7)
+            c7 = BatchNormalization()(c7)
+            c7 = Dropout(0.2)(c7)
+            c7 = Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c7)
+            c7 = BatchNormalization()(c7)
 
-# Predict on train, val and test
-preds_train = model.predict(X_train[:int(X_train.shape[0]*0.9)], verbose=1)
-preds_val = model.predict(X_train[int(X_train.shape[0]*0.9):], verbose=1)
+            u8 = Conv2DTranspose(32, (2, 2), strides=(2, 2), padding='same')(c7)
+            u8 = concatenate([u8, c2])
+            c8 = Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(u8)
+            c8 = BatchNormalization()(c8)
+            c8 = Dropout(0.1)(c8)
+            c8 = Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c8)
+            c8 = BatchNormalization()(c8)
 
-# Threshold predictions
-preds_train_t = (preds_train > 0.5).astype(np.uint8)
-preds_val_t = (preds_val > 0.5).astype(np.uint8)
+            u9 = Conv2DTranspose(16, (2, 2), strides=(2, 2), padding='same')(c8)
+            u9 = concatenate([u9, c1], axis=3)
+            c9 = Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(u9)
+            c9 = BatchNormalization()(c9)
+            c9 = Dropout(0.1)(c9)
+            c9 = Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c9)
+            c9 = BatchNormalization()(c9)
 
-# Save training example predictions 128 x 128 px images
-for i in range(int(N_train * 0.9)):
-    # Perform a sanity check on some random training samples
-    plt.imsave("./Training_Prediction/prediction_{0}.png".format(i+1), np.squeeze(preds_train_t[i]),  cmap ='gray')
+            outputs = Conv2D(1, (1, 1), activation='sigmoid')(c9)
+            model = Model(inputs=[inputs], outputs=[outputs])
+            model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
-print("Program finished running. Training example predictions saved in Training_Prediction folder.")
+        model.summary()
+
+        if train_or_predict == "--train":
+            earlystopper = EarlyStopping(patience=15, verbose=1)
+            checkpointer = ModelCheckpoint('model_unet_checkpoint.h5', verbose=1, save_best_only=True)
+            results = model.fit(X_train, Y_train, validation_split=0.1, batch_size=16, epochs=100,
+                                callbacks=[earlystopper, checkpointer])
+
+            print("Program finished running. The CNN has been trained.")
+
+        if train_or_predict == "--predict":
+            # Predict on train, val and test
+            preds_train = model.predict(X_train[:int(X_train.shape[0]*0.9)], verbose=1)
+            preds_val = model.predict(X_train[int(X_train.shape[0]*0.9):], verbose=1)
+
+            # Threshold predictions
+            preds_train_t = (preds_train > 0.5).astype(np.uint8)
+            preds_val_t = (preds_val > 0.5).astype(np.uint8)
+
+            # Save training example predictions 128 x 128 px images
+            for i in range(int(N_train * 0.9)):
+                # Perform a sanity check on some random training samples
+                plt.imsave("./Training_Prediction/prediction_{0}.png".format(i+1), np.squeeze(preds_train_t[i]),  cmap ='gray')
+
+            print("Program finished running. Training example predictions saved in Training_Prediction folder.")
+    else:
+        print("Make sure when you call this file you pass one of the following flags.\n"
+              "--train trains CNN on examples\n"
+              "--predict generates predictions on training examples and validation set using CNN")
+except IndexError:
+    print("To run this program you must pass a flag:\n"
+          "--train trains CNN on examples\n"
+          "--predict generates predictions on training examples and validation set using CNN")
