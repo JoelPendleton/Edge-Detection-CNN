@@ -183,6 +183,7 @@ dependencies:
   - pexpect=4.8.0=py38_0
   - pickleshare=0.7.5=py38_1000
   - pillow=7.2.0=py38hcc1f983_0
+  - pip>=20.2.2
   - pkginfo=1.5.0.1=py38_0
   - pluggy=0.13.1=py38_0
   - ply=3.11=py38_0
