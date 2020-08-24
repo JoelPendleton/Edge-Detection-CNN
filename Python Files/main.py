@@ -2,8 +2,7 @@
 from datetime import datetime
 import random
 import sys
-from CNN import CNN
-
+from UNet import UNet
 
 try:
     argument = sys.argv[1]
@@ -13,20 +12,20 @@ try:
               "--predict generates predictions on training examples and validation set using CNN\n"
               "--summary summaries convolutional neural network architecture")
     elif argument == "--train" or argument == "--predict":
-        CNN = CNN()
+        UNet = UNet()
         # seed random number generator
         random.seed(datetime.now())  # use current time as random number seed
-        CNN.load_examples()
+        UNet.load_examples()
 
 
         if argument == "--train":
-            CNN.train()
+            UNet.train()
 
         if argument == "--predict":
-            CNN.predict()
+            UNet.predict()
     elif argument == "--summary":
-        CNN = CNN()
-        CNN.model.summary()
+        SegNet = UNet()
+        SegNet.model.summary()
 
 
     else:
