@@ -24,8 +24,8 @@ class UNet:
 
     """
 
-    path = '../Training_Data/Training_Input'
-    num_files = len(os.listdir(path))
+    path = '../Data/Train/Input'
+    num_files = 10# len(os.listdir(path))
 
     # Set some parameters
     IMG_WIDTH = 512
@@ -138,12 +138,13 @@ class UNet:
 
         # Load in training examples
 
-        for i in range(1, self.N_train):
-            x_image = Image.open('../Training_Data/Training_Input/input_{}.png'.format(i)).convert("RGB").resize((self.IMG_WIDTH, self.IMG_HEIGHT))
+        for i in range(self.N_train):
+
+            x_image = Image.open('../Data/Train/Input/input_{0}.png'.format(i+1)).convert("RGB").resize((self.IMG_WIDTH, self.IMG_HEIGHT))
             x = np.array(x_image)
             self.X_train[i] = x
 
-            y_image = Image.open('../Training_Data/Training_Output/output_{}.png'.format(i)).convert("L").resize((self.IMG_WIDTH, self.IMG_HEIGHT))
+            y_image = Image.open('../Data/Train/Output/output_{0}.png'.format(i+1)).convert("L").resize((self.IMG_WIDTH, self.IMG_HEIGHT))
             # convert("L") reduces to single channel greyscale, resize reduces resolution to IMG_WIDTH x IMG_HEIGHT
             y = (np.array(y_image) / 255 == 1)  # divide by 255 as np.array puts white as 255 and black as 0.
             # Use == 1 to convert to boolean
@@ -161,7 +162,7 @@ class UNet:
         """
         earlystopper = EarlyStopping(patience=15, verbose=1)
         checkpointer = ModelCheckpoint('../model_unet_checkpoint.h5', verbose=1, save_best_only=True)
-        results = self.model.fit(self.X_train, self.Y_train, validation_split=0.1, batch_size=16, epochs=100,
+        results = self.model.fit(self.X_train, self.Y_train, validation_split=0.1, batch_size=20, epochs=100,
                             callbacks=[earlystopper, checkpointer])
 
         print("Program finished running. The CNN has been trained.")
@@ -176,19 +177,35 @@ class UNet:
             preds_train_t (float): The binary True or False predictions of positions of black and white pixels /
             edge or no edge.
         """
-        if not os.path.exists("../Training_Data/Training_Prediction"):
-            os.makedirs("../Training_Data/Training_Prediction")
+        if not os.path.exists("../Data/Train/Prediction"):
+            os.makedirs("../Data/Train/Prediction")
 
-            # Predict on train, val and test
+        if not os.path.exists("../Data/Test/Prediction"):
+            os.makedirs("../Data/Test/Prediction")
+
+        # Predict on train, val and test
         preds_train = self.model.predict(self.X_train[:int(self.X_train.shape[0] * 0.9)], verbose=1)
+        preds_val = self.model.predict(self.X_train[int(self.X_train.shape[0] * 0.9):], verbose=1)
+        #preds_test = self.model.predict(self.X_test, verbose=1)
 
         # Threshold predictions
         preds_train_t = (preds_train > 0.5).astype(np.uint8)
+        preds_val_t = (preds_val > 0.5).astype(np.uint8)
+        #preds_test_t = (preds_test > 0.5).astype(np.uint8)
 
-        plt.imsave("../Training_Data/Training_Prediction/prediction_{0}.png".format(1),np.squeeze(preds_train_t[0]), cmap='gray')
-        # Save training example predictions 128 x 128 px images
+        # Save training set predictions
         for i in range(len(preds_train)):
-            plt.imsave("../Training_Data/Training_Prediction/prediction_{0}.png".format(i+1),np.squeeze(preds_train_t[i]), cmap='gray')
+            plt.imsave("../Data/Train/Prediction/prediction_{0}.png".format(i+1), np.squeeze(preds_train_t[i]), cmap='gray')
+
+        # Save val set predictions
+        for i in range(len(preds_train)-1, len(preds_train) + len(preds_val)):
+            plt.imsave("../Data/Train/Prediction/prediction_{0}.png".format(i + 1),
+                       np.squeeze(preds_val_t[i]), cmap='gray')
+
+        # # Save test set predictions
+        # for i in range(len(preds_test)):
+        #     plt.imsave("../Test/Prediction/prediction_{0}.png".format(i + 1),
+        #                np.squeeze(preds_test_t[i]), cmap='gray')
 
         print("Program finished running. Training example predictions saved in Training_Prediction folder.")
 
