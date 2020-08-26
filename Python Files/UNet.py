@@ -25,7 +25,7 @@ class UNet:
     """
 
     path = '../Data/Train/Input'
-    num_files = 10# len(os.listdir(path))
+    num_files = len(os.listdir(path))
 
     # Set some parameters
     IMG_WIDTH = 512
