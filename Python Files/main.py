@@ -6,9 +6,8 @@ from UNet import UNet
 from AutoEncoder1 import AutoEncoder1
 from AutoEncoder2 import AutoEncoder2
 
-
-
 try:
+
     command = sys.argv[1]
     if command == '--help':
         print("Make sure when you call this file you pass one of the following flags.\n"
@@ -18,27 +17,30 @@ try:
     elif command == "--train" or command == "--predict":
         architecture = sys.argv[2]
 
-        if architecture == '--unet':
-            UNet = UNet()
-        elif architecture == 'autoencoder1':
-            AutoEncoder1 = AutoEncoder1()
-        elif architecture == 'autoencoder2':
-            AutoEncoder2 = AutoEncoder2()
-
-
         # seed random number generator
         random.seed(datetime.now())  # use current time as random number seed
-        #UNet.load_examples()
-        #AutoEncoder1.load_examples()
-        AutoEncoder2.load_examples()
+
+        if architecture == '--unet':
+            UNet = UNet()
+            UNet.load_examples()
+        elif architecture == '--autoencoder1':
+            AutoEncoder1.load_examples()
+            AutoEncoder1 = AutoEncoder1()
+
+        elif architecture == '--autoencoder2':
+            AutoEncoder2 = AutoEncoder2()
+            AutoEncoder2.load_examples()
+
+
+
 
 
         if command == "--train":
             if architecture == '--unet':
                 UNet.train()
-            elif architecture == 'autoencoder1':
+            elif architecture == '--autoencoder1':
                 AutoEncoder1.train()
-            elif architecture == 'autoencoder2':
+            elif architecture == '--autoencoder2':
                 AutoEncoder2.train()
 
 
@@ -46,9 +48,9 @@ try:
         if command == "--predict":
             if architecture == '--unet':
                 UNet.predict()
-            elif architecture == 'autoencoder1':
+            elif architecture == '--autoencoder1':
                 AutoEncoder1.predict()
-            elif architecture == 'autoencoder2':
+            elif architecture == '--autoencoder2':
                 AutoEncoder2.predict()
 
 
@@ -58,10 +60,10 @@ try:
         if architecture == '--unet':
             UNet = UNet()
             UNet.model.summary()
-        elif architecture == 'autoencoder1':
+        elif architecture == '--autoencoder1':
             AutoEncoder1 = AutoEncoder1()
             AutoEncoder1.model.summary()
-        elif architecture == 'autoencoder2':
+        elif architecture == '--autoencoder2':
             AutoEncoder2 = AutoEncoder2()
             AutoEncoder2.model.summary()
 

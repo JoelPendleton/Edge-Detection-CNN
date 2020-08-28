@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import tensorflow as tf
 from tensorflow.keras.models import Model, load_model
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 from tensorflow.keras.layers import Input, Dense, Conv2D, Activation, MaxPool2D, Lambda
@@ -41,40 +42,44 @@ class AutoEncoder1:
         random.seed(datetime.now())  # use current time as random number seed
 
         model_exists = os.path.exists('../model_autoencoder1_checkpoint.h5')
+        mirrored_strategy = tf.distribute.MirroredStrategy()
 
         if model_exists:  # If model has already been trained, load model
-            self.model = load_model('../model_autoencoder1_checkpoint.h5')
+            with mirrored_strategy.scope():
+                self.model = load_model('../model_autoencoder1_checkpoint.h5')
         else:  # If model hasn't been trained create model
-            latent_dim = 128
-            # Build U-Net model
-            inputs = Input((self.IMG_HEIGHT, self.IMG_WIDTH, self.IMG_CHANNELS))
-            s = Lambda(lambda x: x / 255)(inputs)
+            with mirrored_strategy.scope():
+
+                latent_dim = 128
+                # Build AutoEncoder1 model
+                inputs = Input((self.IMG_HEIGHT, self.IMG_WIDTH, self.IMG_CHANNELS))
+                s = Lambda(lambda x: x / 255)(inputs)
+
+                x = Conv2D(32, (3, 3), padding="same")(s)
+                x = BatchNormalization()(x)
+                x = LeakyReLU(alpha=0.2)(x)
+                x = MaxPool2D((2, 2))(x)
+                x = Conv2D(64, (3, 3), padding="same")(x)
+                x = BatchNormalization()(x)
+                x = LeakyReLU(alpha=0.2)(x)
+                x = MaxPool2D((2, 2))(x)
+                x = Flatten()(x)
+                units = x.shape[1]
+                x = Dense(latent_dim, name="latent")(x)
+                x = Dense(units)(x)
+                x = LeakyReLU(alpha=0.2)(x)
+                x = Reshape((128, 128, 64))(x)
+
+                x = Conv2DTranspose(64, (3, 3), strides=2, padding="same")(x)
+                x = BatchNormalization()(x)
+                x = LeakyReLU(alpha=0.2)(x)
+                x = Conv2DTranspose(1, (3, 3), strides=2, padding="same")(x)
+                x = BatchNormalization()(x)
+                x = Activation("sigmoid", name="outputs")(x)
+                outputs = x
 
 
-            e = Conv2D(32, (3, 3), padding="same")(s)
-            e = BatchNormalization()(e)
-            e = LeakyReLU(alpha=0.2)(e)
-            e = MaxPool2D((2, 2))(e)
-            e = Conv2D(64, (3, 3), padding="same")(e)
-            e = BatchNormalization()(e)
-            e = LeakyReLU(alpha=0.2)(e)
-            e = MaxPool2D((2, 2))(e)
-            l = Flatten()(e)
-            units = e.shape[1]
-            l = Dense(latent_dim, name="latent")(l)
-            l = Dense(units)(l)
-            l = LeakyReLU(alpha=0.2)(l)
-
-            d = Reshape((128, 128, 64))(l)
-            d = Conv2DTranspose(64, (3, 3), strides=2, padding="same")(d)
-            d = BatchNormalization()(d)
-            d = LeakyReLU(alpha=0.2)(d)
-            d = Conv2DTranspose(1, (3, 3), strides=2, padding="same")(d)
-            d = BatchNormalization()(d)
-            outputs = Activation("sigmoid", name="outputs")(d)
-
-
-            self.model = Model(inputs=[inputs], outputs=[outputs])
+                self.model = Model(inputs=[inputs], outputs=[outputs])
             self.model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
 
@@ -85,7 +90,8 @@ class AutoEncoder1:
         Returns:
             self.X_train.shape (int): the shape of the training example array.
         """
-        # Define dimensions of training examples
+        # Define dimensions of examples
+        self.X_test = np.zeros((self.N_train, self.IMG_HEIGHT, self.IMG_WIDTH, self.IMG_CHANNELS), dtype=np.uint8)
         self.X_train = np.zeros((self.N_train, self.IMG_HEIGHT, self.IMG_WIDTH, self.IMG_CHANNELS), dtype=np.uint8)
         self.Y_train = np.zeros((self.N_train, self.IMG_HEIGHT, self.IMG_WIDTH, 1), dtype=bool)
 
@@ -115,8 +121,8 @@ class AutoEncoder1:
         """
         earlystopper = EarlyStopping(patience=15, verbose=1)
         checkpointer = ModelCheckpoint('../model_autoencoder1_checkpoint.h5', verbose=1, save_best_only=True)
-        results = self.model.fit(self.X_train, self.Y_train, validation_split=0.1, batch_size=16, epochs=100,
-                            callbacks=[earlystopper, checkpointer])
+        results = self.model.fit(self.X_train, self.Y_train, validation_split=0.1, batch_size=64, epochs=100,
+                                 shuffle=True, use_multiprocessing=True, callbacks=[earlystopper, checkpointer])
 
         print("Program finished running. The CNN has been trained.")
 

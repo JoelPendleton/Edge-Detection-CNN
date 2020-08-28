@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import tensorflow as tf
 from tensorflow.keras.models import Model, load_model
 from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import Dropout, Lambda
@@ -12,7 +13,6 @@ from PIL import Image
 import os.path
 import random
 
-
 class UNet:
     """
     This is a class for edge-detection convolutional neural network using UNet architecture.
@@ -23,7 +23,6 @@ class UNet:
         IMG_CHANNELS (int): the number of colour channels of images
 
     """
-
 
     # Set some parameters
     IMG_WIDTH = 512
@@ -40,87 +39,94 @@ class UNet:
        Parameters:
           model (object): object containing all the information to utilise the neural network.
        """
+        tf.get_logger().setLevel('ERROR')
+
         # seed random number generator
         random.seed(datetime.now())  # use current time as random number seed
 
         model_exists = os.path.exists('../model_unet_checkpoint.h5')
+        mirrored_strategy = tf.distribute.MirroredStrategy()
 
         if model_exists:  # If model has already been trained, load model
-            self.model = load_model('../model_unet_checkpoint.h5')
+            with mirrored_strategy.scope():
+
+                self.model = load_model('../model_unet_checkpoint.h5')
         else:  # If model hasn't been trained create model
+            with mirrored_strategy.scope():
 
-            # Build U-Net model
-            inputs = Input((self.IMG_HEIGHT, self.IMG_WIDTH, self.IMG_CHANNELS))
-            s = Lambda(lambda x: x / 255)(inputs)
+                # Build U-Net model
+                inputs = Input((self.IMG_HEIGHT, self.IMG_WIDTH, self.IMG_CHANNELS))
+                s = Lambda(lambda x: x / 255)(inputs)
 
-            c1 = Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(s)
-            c1 = BatchNormalization()(c1)
-            c1 = Dropout(0.1)(c1)
-            c1 = Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c1)
-            c1 = BatchNormalization()(c1)
-            p1 = MaxPooling2D((2, 2))(c1)
+                c1 = Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(s)
+                c1 = BatchNormalization()(c1)
+                c1 = Dropout(0.1)(c1)
+                c1 = Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c1)
+                c1 = BatchNormalization()(c1)
+                p1 = MaxPooling2D((2, 2))(c1)
 
-            c2 = Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(p1)
-            c2 = BatchNormalization()(c2)
-            c2 = Dropout(0.1)(c2)
-            c2 = Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c2)
-            c2 = BatchNormalization()(c2)
-            p2 = MaxPooling2D((2, 2))(c2)
+                c2 = Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(p1)
+                c2 = BatchNormalization()(c2)
+                c2 = Dropout(0.1)(c2)
+                c2 = Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c2)
+                c2 = BatchNormalization()(c2)
+                p2 = MaxPooling2D((2, 2))(c2)
 
-            c3 = Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(p2)
-            c3 = BatchNormalization()(c3)
-            c3 = Dropout(0.2)(c3)
-            c3 = Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c3)
-            c3 = BatchNormalization()(c3)
-            p3 = MaxPooling2D((2, 2))(c3)
+                c3 = Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(p2)
+                c3 = BatchNormalization()(c3)
+                c3 = Dropout(0.2)(c3)
+                c3 = Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c3)
+                c3 = BatchNormalization()(c3)
+                p3 = MaxPooling2D((2, 2))(c3)
 
-            c4 = Conv2D(256, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(p3)
-            c4 = BatchNormalization()(c4)
-            c4 = Dropout(0.2)(c4)
-            c4 = Conv2D(256, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c4)
-            c4 = BatchNormalization()(c4)
-            p4 = MaxPooling2D(pool_size=(2, 2))(c4)
+                c4 = Conv2D(256, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(p3)
+                c4 = BatchNormalization()(c4)
+                c4 = Dropout(0.2)(c4)
+                c4 = Conv2D(256, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c4)
+                c4 = BatchNormalization()(c4)
+                p4 = MaxPooling2D(pool_size=(2, 2))(c4)
 
-            c5 = Conv2D(512, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(p4)
-            c5 = BatchNormalization()(c5)
-            c5 = Dropout(0.3)(c5)
-            c5 = Conv2D(512, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c5)
-            c5 = BatchNormalization()(c5)
+                c5 = Conv2D(512, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(p4)
+                c5 = BatchNormalization()(c5)
+                c5 = Dropout(0.3)(c5)
+                c5 = Conv2D(512, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c5)
+                c5 = BatchNormalization()(c5)
 
-            u6 = Conv2DTranspose(128, (2, 2), strides=(2, 2), padding='same')(c5)
-            u6 = concatenate([u6, c4])
-            c6 = Conv2D(256, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(u6)
-            c6 = BatchNormalization()(c6)
-            c6 = Dropout(0.2)(c6)
-            c6 = Conv2D(256, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c6)
-            c6 = BatchNormalization()(c6)
+                u6 = Conv2DTranspose(128, (2, 2), strides=(2, 2), padding='same')(c5)
+                u6 = concatenate([u6, c4])
+                c6 = Conv2D(256, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(u6)
+                c6 = BatchNormalization()(c6)
+                c6 = Dropout(0.2)(c6)
+                c6 = Conv2D(256, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c6)
+                c6 = BatchNormalization()(c6)
 
-            u7 = Conv2DTranspose(64, (2, 2), strides=(2, 2), padding='same')(c6)
-            u7 = concatenate([u7, c3])
-            c7 = Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(u7)
-            c7 = BatchNormalization()(c7)
-            c7 = Dropout(0.2)(c7)
-            c7 = Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c7)
-            c7 = BatchNormalization()(c7)
+                u7 = Conv2DTranspose(64, (2, 2), strides=(2, 2), padding='same')(c6)
+                u7 = concatenate([u7, c3])
+                c7 = Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(u7)
+                c7 = BatchNormalization()(c7)
+                c7 = Dropout(0.2)(c7)
+                c7 = Conv2D(128, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c7)
+                c7 = BatchNormalization()(c7)
 
-            u8 = Conv2DTranspose(32, (2, 2), strides=(2, 2), padding='same')(c7)
-            u8 = concatenate([u8, c2])
-            c8 = Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(u8)
-            c8 = BatchNormalization()(c8)
-            c8 = Dropout(0.1)(c8)
-            c8 = Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c8)
-            c8 = BatchNormalization()(c8)
+                u8 = Conv2DTranspose(32, (2, 2), strides=(2, 2), padding='same')(c7)
+                u8 = concatenate([u8, c2])
+                c8 = Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(u8)
+                c8 = BatchNormalization()(c8)
+                c8 = Dropout(0.1)(c8)
+                c8 = Conv2D(64, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c8)
+                c8 = BatchNormalization()(c8)
 
-            u9 = Conv2DTranspose(16, (2, 2), strides=(2, 2), padding='same')(c8)
-            u9 = concatenate([u9, c1], axis=3)
-            c9 = Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(u9)
-            c9 = BatchNormalization()(c9)
-            c9 = Dropout(0.1)(c9)
-            c9 = Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c9)
-            c9 = BatchNormalization()(c9)
+                u9 = Conv2DTranspose(16, (2, 2), strides=(2, 2), padding='same')(c8)
+                u9 = concatenate([u9, c1], axis=3)
+                c9 = Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(u9)
+                c9 = BatchNormalization()(c9)
+                c9 = Dropout(0.1)(c9)
+                c9 = Conv2D(32, (3, 3), activation='relu', kernel_initializer='he_normal', padding='same')(c9)
+                c9 = BatchNormalization()(c9)
 
-            outputs = Conv2D(1, (1, 1), activation='sigmoid')(c9)
-            self.model = Model(inputs=[inputs], outputs=[outputs])
+                outputs = Conv2D(1, (1, 1), activation='sigmoid')(c9)
+                self.model = Model(inputs=[inputs], outputs=[outputs])
+
             self.model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
 
@@ -148,6 +154,7 @@ class UNet:
             # convert("L") reduces to single channel greyscale, resize reduces resolution to IMG_WIDTH x IMG_HEIGHT
             y = (np.array(y_image) / 255 == 1)  # divide by 255 as np.array puts white as 255 and black as 0.
             # Use == 1 to convert to boolean
+
             self.Y_train[i] = y[:, :, np.newaxis]  # Add training output to array
 
         return self.X_train.shape
@@ -162,8 +169,8 @@ class UNet:
         """
         earlystopper = EarlyStopping(patience=30, verbose=1)
         checkpointer = ModelCheckpoint('../model_unet_checkpoint.h5', verbose=1, save_best_only=True)
-        results = self.model.fit(self.X_train, self.Y_train, validation_split=0.1, batch_size=16, epochs=100,
-                            callbacks=[earlystopper, checkpointer])
+        results = self.model.fit(self.X_train, self.Y_train, validation_split=0.1, batch_size=64, epochs=100,
+                                 shuffle=True, use_multiprocessing=True, callbacks=[earlystopper, checkpointer])
 
         print("Program finished running. The CNN has been trained.")
 

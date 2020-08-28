@@ -2,8 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow.keras.models import Model, load_model
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
-from tensorflow.keras.layers import Input, Dense, Conv2D, Activation, MaxPool2D, Lambda, UpSampling2D
-from tensorflow.keras.layers import BatchNormalization, Flatten, Reshape, Conv2DTranspose, LeakyReLU
+from tensorflow.keras.layers import Input, Conv2D, MaxPool2D, Lambda, UpSampling2D
+import tensorflow as tf
 from datetime import datetime
 from PIL import Image
 import os.path
@@ -40,27 +40,30 @@ class AutoEncoder2:
         random.seed(datetime.now())  # use current time as random number seed
 
         model_exists = os.path.exists('../model_autoencoder2_checkpoint.h5')
+        mirrored_strategy = tf.distribute.MirroredStrategy()
 
         if model_exists:  # If model has already been trained, load model
-            self.model = load_model('../model_autoencoder2_checkpoint.h5')
+            with mirrored_strategy.scope():
+                self.model = load_model('../model_autoencoder2_checkpoint.h5')
         else:  # If model hasn't been trained create model
-            latent_dim = 128
-            # Build U-Net model
-            inputs = Input((self.IMG_HEIGHT, self.IMG_WIDTH, self.IMG_CHANNELS))
-            s = Lambda(lambda x: x / 255)(inputs)
+            with mirrored_strategy.scope():
 
-            x = Conv2D(32, (3, 3), activation='relu', padding ='same')(s)
-            x = MaxPool2D((2, 2), padding='same')(x)
-            x = Conv2D(32, (3, 3), activation='relu', padding ='same')(x)
-            encoded = MaxPool2D((2, 2), padding='same')(x)
-            x = Conv2D(32, (3, 3), activation='relu', padding ='same')(encoded)
-            x = UpSampling2D((2, 2))(x)
-            x = Conv2D(32, (3, 3), activation='relu', padding ='same')(x)
-            x = UpSampling2D((2, 2))(x)
-            outputs = Conv2D(1, (3, 3), activation='sigmoid', padding ='same')(x)
+                # Build AutoEncoder2 model
+                inputs = Input((self.IMG_HEIGHT, self.IMG_WIDTH, self.IMG_CHANNELS))
+                s = Lambda(lambda x: x / 255)(inputs)
 
+                x = Conv2D(32, (3, 3), activation='relu', padding ='same')(s)
+                x = MaxPool2D((2, 2), padding='same')(x)
+                x = Conv2D(32, (3, 3), activation='relu', padding ='same')(x)
+                encoded = MaxPool2D((2, 2), padding='same')(x)
+                x = Conv2D(32, (3, 3), activation='relu', padding ='same')(encoded)
+                x = UpSampling2D((2, 2))(x)
+                x = Conv2D(32, (3, 3), activation='relu', padding ='same')(x)
+                x = UpSampling2D((2, 2))(x)
+                outputs = Conv2D(1, (3, 3), activation='sigmoid', padding ='same')(x)
 
-            self.model = Model(inputs=[inputs], outputs=[outputs])
+                self.model = Model(inputs=[inputs], outputs=[outputs])
+
             self.model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
 
@@ -71,7 +74,8 @@ class AutoEncoder2:
         Returns:
             self.X_train.shape (int): the shape of the training example array.
         """
-        # Define dimensions of training examples
+        # Define dimensions of examples
+        self.X_test = np.zeros((self.N_train, self.IMG_HEIGHT, self.IMG_WIDTH, self.IMG_CHANNELS), dtype=np.uint8)
         self.X_train = np.zeros((self.N_train, self.IMG_HEIGHT, self.IMG_WIDTH, self.IMG_CHANNELS), dtype=np.uint8)
         self.Y_train = np.zeros((self.N_train, self.IMG_HEIGHT, self.IMG_WIDTH, 1), dtype=bool)
 
@@ -101,8 +105,8 @@ class AutoEncoder2:
         """
         earlystopper = EarlyStopping(patience=15, verbose=1)
         checkpointer = ModelCheckpoint('../model_autoencoder2_checkpoint.h5', verbose=1, save_best_only=True)
-        results = self.model.fit(self.X_train, self.Y_train, validation_split=0.1, batch_size=16, epochs=100,
-                            callbacks=[earlystopper, checkpointer])
+        results = self.model.fit(self.X_train, self.Y_train, validation_split=0.1, batch_size=64, epochs=100,
+                                 shuffle=True, use_multiprocessing=True, callbacks=[earlystopper, checkpointer])
 
         print("Program finished running. The CNN has been trained.")
 
@@ -122,10 +126,13 @@ class AutoEncoder2:
         if not os.path.exists("../Data/Test/Prediction"):
             os.makedirs("../Data/Test/Prediction")
 
+
+
         # Predict on train, val and test
         preds_train = self.model.predict(self.X_train[:int(self.X_train.shape[0] * 0.9)], verbose=1)
         preds_val = self.model.predict(self.X_train[int(self.X_train.shape[0] * 0.9):], verbose=1)
         preds_test = self.model.predict(self.X_test, verbose=1)
+
 
         # Threshold predictions
         preds_train_t = (preds_train > 0.5).astype(np.uint8)
