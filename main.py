@@ -4,22 +4,21 @@ from Models.AutoEncoder1 import AutoEncoder1
 from Models.AutoEncoder2 import AutoEncoder2
 from Models.UNetPP import UNetPP
 
-
 try:
     command = sys.argv[1]
 except IndexError:
     print("An Index error has occured! Check the documentation to make sure your passing all the required arguments.")
 
-if command == '--help':
+if command == '--Help':
     print("Check the documentation.")
 
-elif command == "--train" or command == "--predict":
+elif command == "--Train" or command == "--Predict":
     try:
         architecture = sys.argv[2]
     except IndexError:
         print("An Index error has occured! Check the documentation to make sure your passing all the required arguments.")
 
-    if command == "--train":
+    if command == "--Train":
         if architecture == '--UNet':
             UNet = UNet()
             UNet.train()
@@ -35,7 +34,7 @@ elif command == "--train" or command == "--predict":
         else:
             raise Exception( "You have passed an invalid argument.\nCheck the documentation for the allowed arguments.")
 
-    elif command == "--predict":
+    elif command == "--Predict":
         if architecture == '--UNet':
             UNet = UNet()
             UNet.predict()
@@ -54,7 +53,7 @@ elif command == "--train" or command == "--predict":
         raise Exception("You have passed an invalid argument.\nCheck the documentation for the allowed arguments.")
 
 
-elif command == "--summary":
+elif command == "--Summary":
     architecture = sys.argv[2]
 
     if architecture == '--UNet':
@@ -72,7 +71,7 @@ elif command == "--summary":
     else:
         raise Exception("You have passed an invalid argument.\nCheck the documentation for the allowed arguments.")
 
-elif command == "--evaluate":
+elif command == "--Evaluate":
     architecture = sys.argv[2]
 
     if architecture == '--UNet':
