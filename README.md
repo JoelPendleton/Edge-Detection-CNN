@@ -10,34 +10,28 @@ To run the program execute the following command in the command line:
 The allowed values for [Command] and [Architecture] are shown in the table below:
 
 <table>
-   <tbody>
-      <tr>
-       <th>Command</th>
-       <th>Architecture</th>
-     </tr> 
+    <tr>
+      <th>Command</th>
+      <th>Architecture</th>
+    </tr>
+    <tr>
+      <td>Help</td>
+      <td>UNet</td>
+    </tr>
+    <tr>
+      <td>Train</td>
+      <td>UNet++</td>
+    </tr>
      <tr>
-       <td>Help</td>
-       <td></td>
-     </tr> 
-
+      <td>Summary</td>
+      <td>AutoEncoder1</td>
+    </tr>
      <tr>
-       <td>Train</td>
-       <td></td>
-     </tr> 
-
+      <td>Evaluate</td>
+      <td>AutoEncoder2</td>
+    </tr>
      <tr>
-       <td>Predict</td>
-       <td></td>
-     </tr > 
-
-     <tr>
-       <td>Evaluate</td>
-       <td></td>
-     </tr > 
-
-     <tr>
-       <td>Summary</td>
-       <td></td>
-     </tr > 
-  </tbody>
+      <td>Predict</td>
+      <td></td>
+    </tr>
 </table>
