@@ -38,7 +38,9 @@ class UNetPP:
         IMG_WIDTH (int): the width of the input images in pixels
         IMG_HEIGHT (int): the height of the input images in pixels
         IMG_CHANNELS (int): the number of colour channels of images
-
+        number_of_filters (int): the number of filters to use in the model
+        N_test (int): the number of examples in the test set
+        N_train (int):  the number of examples in the training set
     """
 
     # Set some parameters
@@ -51,7 +53,6 @@ class UNetPP:
     N_train = len(os.listdir('./Data/Train/Input'))  # Number of training examples
 
     def __init__(self):
-
         """
        The constructor for CNN class.
 
@@ -229,7 +230,7 @@ class UNetPP:
 
     def load_training_set(self):
         """
-        The function to load training examples for CNN.
+        The function to load training examples for CNN and put them inside self.X_train and self.Y_train.
 
         Returns:
            True upon completion
@@ -257,7 +258,7 @@ class UNetPP:
 
     def load_test_set(self):
         """
-        The function to load training examples for CNN.
+        The function to load the test set for CNN, and place it inside self.X_test and self.Y_test.
 
         Returns:
            True upon completion
@@ -288,7 +289,7 @@ class UNetPP:
           The function to train the CNN using training examples.
 
           Returns:
-              results (object): the results of the trained CNN.
+              results: the results of the trained CNN.
           """
         self.load_training_set()
         earlystopper = EarlyStopping(patience=10, verbose=1)
@@ -309,8 +310,8 @@ class UNetPP:
         The function to make predictions on training examples.
 
         Returns:
-            preds_train_t (float): The binary True or False predictions of positions of black and white pixels /
-            edge or no edge.
+            [preds_train_t, preds_val_t, preds_test_t] (boolean): The boolean True or False predictions of positions
+            of black and white pixels edge or no edge, for each of the data sets.
         """
 
         if not os.path.exists("./Data/Train/Prediction"):
@@ -348,14 +349,14 @@ class UNetPP:
 
         print("Program finished running. Predictions saved.")
 
-        return preds_train_t
+        return preds_train_t, preds_val_t, preds_test_t
 
     def evaluate(self):
         """
         The function to make evaluate model on test set.
 
         Returns:
-            self.model.evaluate (float): The evaluated metrics of the model's performance using the test set.
+            self.model.evaluate: The evaluated metrics of the model's performance using the test set.
         """
         self.load_test_set()
         return self.model.evaluate(self.X_test, self.Y_test, use_multiprocessing = True)

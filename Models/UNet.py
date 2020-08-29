@@ -130,11 +130,11 @@ class UNet:
 
     def load_training_set(self):
         """
-        The function to load training examples for CNN.
+         The function to load training examples for CNN and put them inside self.X_train and self.Y_train.
 
-        Returns:
-           True upon completion
-        """
+         Returns:
+            True upon completion
+         """
         # Define dimensions of examples
         self.X_train = np.zeros((self.N_train, self.IMG_HEIGHT, self.IMG_WIDTH, self.IMG_CHANNELS))
         self.Y_train = np.zeros((self.N_train, self.IMG_HEIGHT, self.IMG_WIDTH, 1))
@@ -158,7 +158,7 @@ class UNet:
 
     def load_test_set(self):
         """
-        The function to load training examples for CNN.
+        The function to load the test set for CNN, and place it inside self.X_test and self.Y_test.
 
         Returns:
            True upon completion
@@ -190,7 +190,7 @@ class UNet:
         The function to train the CNN using training examples.
 
         Returns:
-            results (object): the results of the trained CNN.
+            results: the results of the trained CNN.
         """
         self.load_training_set()
         earlystopper = EarlyStopping(patience=30, verbose=1)
@@ -207,9 +207,10 @@ class UNet:
         The function to make predictions on training examples.
 
         Returns:
-            preds_train_t (float): The binary True or False predictions of positions of black and white pixels /
-            edge or no edge.
+            [preds_train_t, preds_val_t, preds_test_t] (boolean): The boolean True or False predictions of positions
+            of black and white pixels edge or no edge, for each of the data sets.
         """
+
         if not os.path.exists("./Data/Train/Prediction"):
             os.makedirs("./Data/Train/Prediction")
 
@@ -220,8 +221,8 @@ class UNet:
         self.load_test_set()
 
         # Predict on train, val and test
-        preds_train = self.model.predict(self.X_train[:int(self.X_train.shape[0] * 0.9)], verbose=1)
-        preds_val = self.model.predict(self.X_train[int(self.X_train.shape[0] * 0.9):], verbose=1)
+        preds_train = self.model.predict(self.X_train, verbose=1)
+        preds_val = self.model.predict(self.X_val, verbose=1)
         preds_test = self.model.predict(self.X_test, verbose=1)
 
         # Threshold predictions
@@ -245,14 +246,14 @@ class UNet:
 
         print("Program finished running. Predictions saved.")
 
-        return preds_train_t
+        return preds_train_t, preds_val_t, preds_test_t
 
     def evaluate(self):
         """
         The function to make evaluate model on test set.
 
         Returns:
-            self.model.evaluate (float): The evaluated metrics of the model's performance using the test set.
+            self.model.evaluate: The evaluated metrics of the model's performance using the test set.
         """
         self.load_test_set()
         return self.model.evaluate(self.X_test, self.Y_test, use_multiprocessing = True)
