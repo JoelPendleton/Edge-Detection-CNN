@@ -7,7 +7,7 @@ Object Contour Detection / Edge Detection CNN using Tensorflow 2 using the U-Net
 To run the program execute the following command in the command line:
 ```python main.py --[Command] --[Architecture]```
 
-The allowed values for **[Command]** and **[Architecture]** are shown in the table below:
+The allowed values for **[Command]** and **[Architecture]** arguments/flags are shown in the table below:
 
 <table>
     <tr>
