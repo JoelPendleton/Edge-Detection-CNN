@@ -7,7 +7,7 @@ Object Contour Detection / Edge Detection CNN using Tensorflow 2 using the U-Net
 To run the program execute the following command in the command line:
 ```python main.py --[Command] --[Architecture]```
 
-The allowed values for [Command] and [Architecture] are shown in the table below:
+The allowed values for **[Command]** and **[Architecture]** are shown in the table below:
 
 <table>
     <tr>
@@ -35,3 +35,10 @@ The allowed values for [Command] and [Architecture] are shown in the table below
       <td></td>
     </tr>
 </table>
+
+**Command** refers to the functionality of the **Architecture** you which the utilise.
+
+* **Train** trains the model on the training set.
+* **Summary** outputs a summary of the architecture of the model.
+* **Evaluate** gives the accuracy of the model on the test set.
+* **Predict** generates images of the edges as predicted by the model.
