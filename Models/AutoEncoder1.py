@@ -82,34 +82,61 @@ class AutoEncoder1:
                 self.model = Model(inputs=[inputs], outputs=[outputs])
             self.model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
-
-    def load_examples(self):
+    def load_training_set(self):
         """
         The function to load training examples for CNN.
 
         Returns:
-            self.X_train.shape (int): the shape of the training example array.
+           True upon completion
         """
         # Define dimensions of examples
-        self.X_test = np.zeros((self.N_train, self.IMG_HEIGHT, self.IMG_WIDTH, self.IMG_CHANNELS), dtype=np.uint8)
-        self.X_train = np.zeros((self.N_train, self.IMG_HEIGHT, self.IMG_WIDTH, self.IMG_CHANNELS), dtype=np.uint8)
-        self.Y_train = np.zeros((self.N_train, self.IMG_HEIGHT, self.IMG_WIDTH, 1), dtype=bool)
+        self.X_train = np.zeros((self.N_train, self.IMG_HEIGHT, self.IMG_WIDTH, self.IMG_CHANNELS))
+        self.Y_train = np.zeros((self.N_train, self.IMG_HEIGHT, self.IMG_WIDTH, 1))
 
         # Load in training examples
-
         for i in range(self.N_train):
-
-            x_image = Image.open('./Data/Train/Input/input_{0}.png'.format(i+1)).convert("L").resize((self.IMG_WIDTH, self.IMG_HEIGHT))
-            x = np.reshape(np.array(x_image), (self.IMG_HEIGHT, self.IMG_WIDTH, self.IMG_CHANNELS) )#np.array(x_image)
+            x_image = Image.open('./Data/Train/Input/input_{0}.png'.format(i + 1)).convert("RGB").resize(
+                (self.IMG_WIDTH, self.IMG_HEIGHT))
+            x = np.array(x_image)
             self.X_train[i] = x
 
-            y_image = Image.open('./Data/Train/Output/output_{0}.png'.format(i+1)).convert("L").resize((self.IMG_WIDTH, self.IMG_HEIGHT))
+            y_image = Image.open('./Data/Train/Output/output_{0}.png'.format(i + 1)).convert("L").resize(
+                (self.IMG_WIDTH, self.IMG_HEIGHT))
             # convert("L") reduces to single channel greyscale, resize reduces resolution to IMG_WIDTH x IMG_HEIGHT
             y = (np.array(y_image) / 255 == 1)  # divide by 255 as np.array puts white as 255 and black as 0.
             # Use == 1 to convert to boolean
-            self.Y_train[i] = y[:, :, np.newaxis]  # Add training output to array
+            y = np.reshape(np.array(y), (self.IMG_HEIGHT, self.IMG_WIDTH, 1))
+            self.Y_train[i] = y  # Add training output to array
 
-        return self.X_train.shape
+        return True
+
+    def load_test_set(self):
+        """
+        The function to load training examples for CNN.
+
+        Returns:
+           True upon completion
+        """
+        self.X_test = np.zeros((self.N_train, self.IMG_HEIGHT, self.IMG_WIDTH, self.IMG_CHANNELS))
+        self.Y_test = np.zeros((self.N_train, self.IMG_HEIGHT, self.IMG_WIDTH, 1))
+
+        # Load in test set
+
+        for i in range(self.N_test):
+            x_image = Image.open('./Data/Test/Input/input_{0}.png'.format(i + 1)).convert("RGB").resize(
+                (self.IMG_WIDTH, self.IMG_HEIGHT))
+            x = np.array(x_image)
+            self.X_test[i] = x
+
+            y_image = Image.open('./Data/Test/Output/output_{0}.png'.format(i + 1)).convert("L").resize(
+                (self.IMG_WIDTH, self.IMG_HEIGHT))
+            # convert("L") reduces to single channel greyscale, resize reduces resolution to IMG_WIDTH x IMG_HEIGHT
+            y = (np.array(y_image) / 255 == 1)  # divide by 255 as np.array puts white as 255 and black as 0.
+            # Use == 1 to convert to boolean
+            y = np.reshape(np.array(y), (self.IMG_HEIGHT, self.IMG_WIDTH, 1))
+            self.Y_test[i] = y  # Add training output to array
+
+        return True
 
 
     def train(self):
@@ -119,6 +146,7 @@ class AutoEncoder1:
         Returns:
             results (object): the results of the trained CNN.
         """
+        self.load_training_set()
         earlystopper = EarlyStopping(patience=15, verbose=1)
         checkpointer = ModelCheckpoint('./Checkpoints/model_autoencoder1_checkpoint.h5', verbose=1, save_best_only=True)
         results = self.model.fit(self.X_train, self.Y_train, validation_split=0.1, batch_size=64, epochs=100,
@@ -142,11 +170,13 @@ class AutoEncoder1:
         if not os.path.exists("./Data/Test/Prediction"):
             os.makedirs("./Data/Test/Prediction")
 
+        self.load_training_set()
+        self.load_test_set()
+
         # Predict on train, val and test
         preds_train = self.model.predict(self.X_train[:int(self.X_train.shape[0] * 0.9)], verbose=1)
         preds_val = self.model.predict(self.X_train[int(self.X_train.shape[0] * 0.9):], verbose=1)
         preds_test = self.model.predict(self.X_test, verbose=1)
-
 
         # Threshold predictions
         preds_train_t = (preds_train > 0.5).astype(np.uint8)
@@ -155,7 +185,8 @@ class AutoEncoder1:
 
         # Save training set predictions
         for i in range(len(preds_train)):
-            plt.imsave("./Data/Train/Prediction/prediction_{0}.png".format(i+1), np.squeeze(preds_train_t[i]), cmap='gray')
+            plt.imsave("./Data/Train/Prediction/prediction_{0}.png".format(i + 1), np.squeeze(preds_train_t[i]),
+                       cmap='gray')
 
         # Save val set predictions
         for i in range(len(preds_val)):
@@ -170,3 +201,22 @@ class AutoEncoder1:
         print("Program finished running. Predictions saved.")
 
         return preds_train_t
+
+    def evaluate(self):
+        """
+        The function to make evaluate model on test set.
+
+        Returns:
+            self.model.evaluate (float): The evaluated metrics of the model's performance using the test set.
+        """
+        self.load_test_set()
+        return self.model.evaluate(self.X_test, self.Y_test, use_multiprocessing=True)
+
+    def summary(self):
+        """
+        The function to output summary of model.
+
+        Returns:
+            self.model.summary(): summary of model
+        """
+        return self.model.summary()

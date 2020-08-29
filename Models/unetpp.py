@@ -1,13 +1,12 @@
-from tensorflow import cast, float32
 import tensorflow as tf
 from tensorflow.keras.models import Model, load_model
 from tensorflow.keras.layers import concatenate
-from tensorflow.keras.optimizers import Adam
 import numpy as np
 from PIL import Image
-from UNetPP.losses import dice, iou, weighted_loss, cce_iou_dice
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras.layers import Input, Conv2D, BatchNormalization, LeakyReLU, Dropout, MaxPooling2D, Conv2DTranspose
+from tensorflow.keras.layers import Dropout, Lambda
+
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 
 import os
@@ -43,15 +42,13 @@ class UNetPP:
     """
 
     # Set some parameters
-    number_of_filters = 2
-    num_classes = 1
-    weights_list = {1: 1.0, 2: 50.0, 3: 70.0}
+    number_of_filters = 16
     IMG_WIDTH = 512
     IMG_HEIGHT = 512
     IMG_CHANNELS = 3
 
     N_test = len(os.listdir('./Data/Test/Input'))  # Number of test examples
-    N_train = 5  # len(os.listdir('Data/Train/Input'))  # Number of training examples
+    N_train = len(os.listdir('./Data/Train/Input'))  # Number of training examples
 
     def __init__(self):
 
@@ -61,9 +58,8 @@ class UNetPP:
        Parameters:
           model (object): object containing all the information to utilise the neural network.
        """
-
-        model_exists = os.path.exists('./Checkpoints/model_unetpp_checkpoint.h5')
         mirrored_strategy = tf.distribute.MirroredStrategy()
+        model_exists = os.path.exists('./Checkpoints/model_unetpp_checkpoint.h5')
 
         if model_exists:  # If model has already been trained, load model
             with mirrored_strategy.scope():
@@ -72,8 +68,10 @@ class UNetPP:
         else:  # If model hasn't been trained create model
             with mirrored_strategy.scope():
 
-                model_input = Input((self.IMG_WIDTH,  self.IMG_HEIGHT, self.IMG_CHANNELS))
-                x00 = conv2d(filters=int(16 * self.number_of_filters))(model_input)
+                inputs = Input((self.IMG_WIDTH, self.IMG_HEIGHT, self.IMG_CHANNELS))
+                s = Lambda(lambda x: x / 255)(inputs)
+
+                x00 = conv2d(filters=int(16 * self.number_of_filters))(s)
                 x00 = BatchNormalization()(x00)
                 x00 = LeakyReLU(0.01)(x00)
                 x00 = Dropout(0.2)(x00)
@@ -221,30 +219,26 @@ class UNetPP:
                 x04 = LeakyReLU(0.01)(x04)
                 x04 = Dropout(0.2)(x04)
 
-                output = Conv2D(self.num_classes, kernel_size=(1, 1), activation='softmax')(x04)
+                outputs = Conv2D(1, kernel_size=(1, 1), activation='sigmoid')(x04)
+
+                self.model = Model(inputs=[inputs], outputs=[outputs])
+
+            self.model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
 
-                self.model = Model(inputs=[model_input], outputs=[output])
 
-        loss_function = weighted_loss(cce_iou_dice, self.weights_list)
-        metrics = [dice, iou, 'accuracy']
-        self.model.compile(optimizer='adam', loss=loss_function, metrics=metrics)
-
-
-    def load_examples(self):
+    def load_training_set(self):
         """
         The function to load training examples for CNN.
 
         Returns:
-            self.X_train.shape (int): the shape of the training example array.
+           True upon completion
         """
         # Define dimensions of examples
-        self.X_test = np.zeros((self.N_train, self.IMG_HEIGHT, self.IMG_WIDTH, self.IMG_CHANNELS), dtype=np.uint8)
-        self.X_train = np.zeros((self.N_train, self.IMG_HEIGHT, self.IMG_WIDTH, self.IMG_CHANNELS), dtype=np.uint8)
-        self.Y_train = np.zeros((self.N_train, self.IMG_HEIGHT, self.IMG_WIDTH, 1), dtype=bool)
+        self.X_train = np.zeros((self.N_train, self.IMG_HEIGHT, self.IMG_WIDTH, self.IMG_CHANNELS))
+        self.Y_train = np.zeros((self.N_train, self.IMG_HEIGHT, self.IMG_WIDTH,  1))
 
         # Load in training examples
-
         for i in range(self.N_train):
             x_image = Image.open('./Data/Train/Input/input_{0}.png'.format(i + 1)).convert("RGB").resize(
                 (self.IMG_WIDTH, self.IMG_HEIGHT))
@@ -256,24 +250,38 @@ class UNetPP:
             # convert("L") reduces to single channel greyscale, resize reduces resolution to IMG_WIDTH x IMG_HEIGHT
             y = (np.array(y_image) / 255 == 1)  # divide by 255 as np.array puts white as 255 and black as 0.
             # Use == 1 to convert to boolean
+            y = np.reshape(np.array(y), (self.IMG_HEIGHT, self.IMG_WIDTH,  1))
+            self.Y_train[i] = y  # Add training output to array
 
-            self.Y_train[i] = y[:, :, np.newaxis]  # Add training output to array
+        return True
 
-        self.X_val = self.X_train[int(self.X_train.shape[0] * 0.9):]
-        self.X_train = self.X_train[:int(self.X_train.shape[0] * 0.9)]
+    def load_test_set(self):
+        """
+        The function to load training examples for CNN.
 
-        self.Y_val = self.Y_train[int(self.Y_train.shape[0] * 0.9):].astype(int)
-        self.Y_train = self.Y_train[:int(self.Y_train.shape[0] * 0.9)].astype(int)
+        Returns:
+           True upon completion
+        """
+        self.X_test = np.zeros((self.N_train, self.IMG_HEIGHT, self.IMG_WIDTH, self.IMG_CHANNELS))
+        self.Y_test = np.zeros((self.N_train, self.IMG_HEIGHT, self.IMG_WIDTH, 1))
 
-        # For this model to be used have to convert to a float32 tensor
-        self.X_val = cast(self.X_val, float32)
-        self.X_train = cast(self.X_train, float32)
-        self.Y_val = cast(self.Y_val, float32)
-        self.Y_train = cast(self.Y_train, float32)
+        # Load in test set
 
-        return self.X_train.shape
+        for i in range(self.N_test):
+            x_image = Image.open('./Data/Test/Input/input_{0}.png'.format(i + 1)).convert("RGB").resize(
+                (self.IMG_WIDTH, self.IMG_HEIGHT))
+            x = np.array(x_image)
+            self.X_test[i] = x
 
+            y_image = Image.open('./Data/Test/Output/output_{0}.png'.format(i + 1)).convert("L").resize(
+                (self.IMG_WIDTH, self.IMG_HEIGHT))
+            # convert("L") reduces to single channel greyscale, resize reduces resolution to IMG_WIDTH x IMG_HEIGHT
+            y = (np.array(y_image) / 255 == 1)  # divide by 255 as np.array puts white as 255 and black as 0.
+            # Use == 1 to convert to boolean
+            y = np.reshape(np.array(y), (self.IMG_HEIGHT, self.IMG_WIDTH, 1))
+            self.Y_test[i] = y  # Add training output to array
 
+        return True
 
     def train(self):
         """
@@ -282,11 +290,12 @@ class UNetPP:
           Returns:
               results (object): the results of the trained CNN.
           """
-        earlystopper = EarlyStopping(patience=30, verbose=1)
+        self.load_training_set()
+        earlystopper = EarlyStopping(patience=10, verbose=1)
         checkpointer = ModelCheckpoint('./Checkpoints/model_unetpp_checkpoint.h5', verbose=1, save_best_only=True)
         results = self.model.fit(self.X_train, self.Y_train,
-                              validation_split=0.1,callbacks=[earlystopper, checkpointer],
-                              batch_size=2, use_multiprocessing=True,
+                              validation_split=0.05,callbacks=[earlystopper, checkpointer],
+                              batch_size=16, use_multiprocessing=True,
                               epochs=100,
                               shuffle=True)
 
@@ -303,31 +312,15 @@ class UNetPP:
             preds_train_t (float): The binary True or False predictions of positions of black and white pixels /
             edge or no edge.
         """
-        if not os.path.exists("/Data/Train/Prediction"):
-            os.makedirs("/Data/Train/Prediction")
 
-        if not os.path.exists("/Data/Test/Prediction"):
-            os.makedirs("/Data/Test/Prediction")
+        if not os.path.exists("./Data/Train/Prediction"):
+            os.makedirs("./Data/Train/Prediction")
 
-            # Load in test set
+        if not os.path.exists("./Data/Test/Prediction"):
+            os.makedirs("./Data/Test/Prediction")
 
-            for i in range(self.N_train):
-                x_image = Image.open('/Data/Test/Input/input_{0}.png'.format(i + 1)).convert("RGB").resize(
-                    (self.IMG_WIDTH, self.IMG_HEIGHT))
-                x = np.array(x_image)
-                self.X_test[i] = x
-
-                y_image = Image.open('/Data/Test/Output/output_{0}.png'.format(i + 1)).convert("L").resize(
-                    (self.IMG_WIDTH, self.IMG_HEIGHT))
-                # convert("L") reduces to single channel greyscale, resize reduces resolution to IMG_WIDTH x IMG_HEIGHT
-                y = (np.array(y_image) / 255 == 1)  # divide by 255 as np.array puts white as 255 and black as 0.
-                # Use == 1 to convert to boolean
-                self.Y_test[i] = y[:, :, np.newaxis]  # Add training output to array
-
-            # For this model to be used have to convert to a float32 tensor
-            self.X_test = cast(self.X_val, float32)
-            self.Y_test = cast(self.Y_val, float32)
-
+        self.load_training_set()
+        self.load_test_set()
 
         # Predict on train, val and test
         preds_train = self.model.predict(self.X_train, verbose=1)
@@ -341,20 +334,41 @@ class UNetPP:
 
         # Save training set predictions
         for i in range(len(preds_train)):
-            plt.imsave("../Data/Train/Prediction/prediction_{0}.png".format(i+1), np.squeeze(preds_train_t[i]), cmap='gray')
+            plt.imsave("./Data/Train/Prediction/prediction_{0}.png".format(i+1), np.squeeze(preds_train_t[i]), cmap='gray')
 
         # Save val set predictions
         for i in range(len(preds_val)):
-            plt.imsave("../Data/Train/Prediction/prediction_{0}.png".format(i + len(preds_train)),
+            plt.imsave("./Data/Train/Prediction/prediction_{0}.png".format(i + len(preds_train)),
                        np.squeeze(preds_val_t[i]), cmap='gray')
 
         # Save test set predictions
         for i in range(len(preds_test)):
-            plt.imsave("../Data/Test/Prediction/prediction_{0}.png".format(i + 1),
+            plt.imsave("./Data/Test/Prediction/prediction_{0}.png".format(i + 1),
                        np.squeeze(preds_test_t[i]), cmap='gray')
 
         print("Program finished running. Predictions saved.")
 
         return preds_train_t
+
+    def evaluate(self):
+        """
+        The function to make evaluate model on test set.
+
+        Returns:
+            self.model.evaluate (float): The evaluated metrics of the model's performance using the test set.
+        """
+        self.load_test_set()
+        return self.model.evaluate(self.X_test, self.Y_test, use_multiprocessing = True)
+
+    def summary(self):
+        """
+        The function to output summary of model.
+
+        Returns:
+            self.model.summary(): summary of model
+        """
+        return self.model.summary()
+
+
 
 
