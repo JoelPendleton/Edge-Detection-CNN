@@ -221,8 +221,8 @@ class UNet:
         self.load_test_set()
 
         # Predict on train, val and test
-        preds_train = self.model.predict(self.X_train, verbose=1)
-        preds_val = self.model.predict(self.X_val, verbose=1)
+        preds_train = self.model.predict(self.X_train[:int(self.X_train.shape[0] * 0.9)], verbose=1)
+        preds_val = self.model.predict(self.X_train[int(self.X_train.shape[0] * 0.9):], verbose=1)
         preds_test = self.model.predict(self.X_test, verbose=1)
 
         # Threshold predictions
@@ -266,3 +266,5 @@ class UNet:
             self.model.summary(): summary of model
         """
         return self.model.summary()
+
+

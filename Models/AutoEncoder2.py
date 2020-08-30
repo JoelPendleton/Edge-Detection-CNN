@@ -160,8 +160,8 @@ class AutoEncoder2:
         self.load_test_set()
 
         # Predict on train, val and test
-        preds_train = self.model.predict(self.X_train, verbose=1)
-        preds_val = self.model.predict(self.X_val, verbose=1)
+        preds_train = self.model.predict(self.X_train[:int(self.X_train.shape[0] * 0.9)], verbose=1)
+        preds_val = self.model.predict(self.X_train[int(self.X_train.shape[0] * 0.9):], verbose=1)
         preds_test = self.model.predict(self.X_test, verbose=1)
 
         # Threshold predictions
@@ -171,7 +171,8 @@ class AutoEncoder2:
 
         # Save training set predictions
         for i in range(len(preds_train)):
-            plt.imsave("./Data/Train/Prediction/prediction_{0}.png".format(i+1), np.squeeze(preds_train_t[i]), cmap='gray')
+            plt.imsave("./Data/Train/Prediction/prediction_{0}.png".format(i + 1), np.squeeze(preds_train_t[i]),
+                       cmap='gray')
 
         # Save val set predictions
         for i in range(len(preds_val)):
@@ -195,7 +196,7 @@ class AutoEncoder2:
             self.model.evaluate: The evaluated metrics of the model's performance using the test set.
         """
         self.load_test_set()
-        return self.model.evaluate(self.X_test, self.Y_test, use_multiprocessing = True)
+        return self.model.evaluate(self.X_test, self.Y_test, use_multiprocessing=True)
 
     def summary(self):
         """
@@ -205,3 +206,5 @@ class AutoEncoder2:
             self.model.summary(): summary of model
         """
         return self.model.summary()
+
+
