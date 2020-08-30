@@ -6,16 +6,16 @@ import json
 data = {}  # create 'data' dictonary to store json data
 data['diamonds'] = []
 
-x_image = cv2.imread('../Training_Output/output_10.png')
+x_image = cv2.imread('../Data/Test/Prediction/prediction_18.png')
 img = cv2.bitwise_not(x_image)
 x = edges = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
 IMAGE_WIDTH = x.shape[1]
 IMAGE_HEIGHT = x.shape[0]
 
-V_SD_max = 0.1
-V_G_min = 0.0
-V_G_max = 0.5
+V_SD_max = 0.2
+V_G_min = 0.005
+V_G_max = 1.2
 
 V_G_per_pixel = V_G_max / IMAGE_WIDTH
 V_SD_per_pixel = 2 * V_SD_max / IMAGE_HEIGHT
@@ -174,15 +174,15 @@ for i in range(len(indices)-1):
 
     diamond = {
         'diamond number': i+1,
-        'width of diamond': (end_of_diamond - start_of_diamond) * V_G_per_pixel,
+        'width of diamond (V)': (end_of_diamond - start_of_diamond) * V_G_per_pixel,
         'positive line slopes': [],
         'negative line slopes': [],
-        'positive line x-intercepts': [],
-        'negative line x-intercepts': []
+        'positive line x-intercepts (V)': [],
+        'negative line x-intercepts (V)': []
     }
 
     current_diamond = edges[:, start_of_diamond:end_of_diamond]  # current diamond that we're performing Hough transform on
-    lines = cv2.HoughLines(current_diamond, 2, np.pi/180, 10)
+    lines = cv2.HoughLines(current_diamond, 1, np.pi/180, 10)
 
     # Create conditions for negative gradient lines (theta is in range for -ve gradient)
 
@@ -204,7 +204,7 @@ for i in range(len(indices)-1):
             line_plotted = line_plotter(a1, a2, b1_neg, b2_neg)  # plot line
             if line_plotted:  # break loop and don't plot anymore lines
                 diamond['negative line slopes'].append(-gradient(a1, a2) * gradient_scaling)  # need -ve gradient since indexing of pixels starts in top-left
-                diamond['negative line x-intercepts'].append(x_intercept * V_G_per_pixel)
+                diamond['negative line x-intercepts (V)'].append(x_intercept * V_G_per_pixel)
                 break
 
     if i >= 1:
@@ -212,7 +212,7 @@ for i in range(len(indices)-1):
          the start of previous diamond. a1, a2 describes the negative slope of the line that intersects 
           the start of the current diamond'''
         intersection = get_intersect(a1, a2, b1_pos, b2_pos)
-        diamond['height'] = abs(int(intersection[1] - y_axis_index)) * V_SD_per_pixel
+        diamond['height (V)'] = abs(int(intersection[1] - y_axis_index)) * V_SD_per_pixel
 
     if i == (len(indices) - 2): # if dealing with last diamond
         for index in negative_line_indexes:  # for each of the negative slope positive lines
@@ -222,7 +222,7 @@ for i in range(len(indices)-1):
                 line_plotted = line_plotter(a1, a2, b1_neg, b2_neg)  # plot line
                 if line_plotted:  # break loop and don't plot anymore lines
                     diamond['negative line slopes'].append(-gradient(a1, a2) * gradient_scaling)  # need -ve gradient since indexing of pixels starts in top-left
-                    diamond['negative line x-intercepts'].append(x_intercept * V_G_per_pixel)
+                    diamond['negative line x-intercepts (V)'].append(x_intercept * V_G_per_pixel)
                     c1_neg = a1 # last negative line 1st coordinate
                     c2_neg = a2
                     break
@@ -250,7 +250,7 @@ for i in range(len(indices)-1):
             line_plotted = line_plotter(a1, a2, b1_pos, b2_pos)  # plot line
             if line_plotted:  # break loop and don't plot anymore lines
                 diamond['positive line slopes'].append(-gradient(a1, a2) * gradient_scaling)  # need -ve gradient since indexing of pixels starts in top-left
-                diamond['positive line x-intercepts'].append(x_intercept * V_G_per_pixel)
+                diamond['positive line x-intercepts (V)'].append(x_intercept * V_G_per_pixel)
                 break
 
     if i == (len(indices) - 2): # if dealing with last diamond
@@ -262,8 +262,8 @@ for i in range(len(indices)-1):
                 line_plotted = line_plotter(a1, a2, b1_pos, b2_pos)  # plot line
                 if line_plotted:  # break loop and don't plot anymore lines
                     diamond['positive line slopes'].append(-gradient(a1, a2) * gradient_scaling)
-                    diamond['positive line x-intercepts'].append(x_intercept * V_G_per_pixel)
-                    diamond['height'] = abs(int(intersection[1] - y_axis_index)) * V_SD_per_pixel
+                    diamond['positive line x-intercepts (V)'].append(x_intercept * V_G_per_pixel)
+                    diamond['height (V)'] = abs(int(intersection[1] - y_axis_index)) * V_SD_per_pixel
 
                     break
 
