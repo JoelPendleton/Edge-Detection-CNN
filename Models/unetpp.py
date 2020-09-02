@@ -47,7 +47,8 @@ class UNetPP:
     number_of_filters = 16
     IMG_WIDTH = 512
     IMG_HEIGHT = 512
-    IMG_CHANNELS = 3
+    IMG_CHANNELS = 1
+    batch_size = 2
 
     N_test = len(os.listdir('./Data/Test/Input'))  # Number of test examples
     N_train = len(os.listdir('./Data/Train/Input'))  # Number of training examples
@@ -241,7 +242,7 @@ class UNetPP:
 
         # Load in training examples
         for i in range(self.N_train):
-            x_image = Image.open('./Data/Train/Input/input_{0}.png'.format(i + 1)).convert("RGB").resize(
+            x_image = Image.open('./Data/Train/Input/input_{0}.png'.format(i + 1)).convert("L").resize(
                 (self.IMG_WIDTH, self.IMG_HEIGHT))
             x = np.array(x_image)
             self.X_train[i] = x
@@ -269,7 +270,7 @@ class UNetPP:
         # Load in test set
 
         for i in range(self.N_test):
-            x_image = Image.open('./Data/Test/Input/input_{0}.png'.format(i + 1)).convert("RGB").resize(
+            x_image = Image.open('./Data/Test/Input/input_{0}.png'.format(i + 1)).convert("L").resize(
                 (self.IMG_WIDTH, self.IMG_HEIGHT))
             x = np.array(x_image)
             self.X_test[i] = x
@@ -296,7 +297,7 @@ class UNetPP:
         checkpointer = ModelCheckpoint('./Checkpoints/model_unetpp_checkpoint.h5', verbose=1, save_best_only=True)
         results = self.model.fit(self.X_train, self.Y_train,
                               validation_split=0.05,callbacks=[earlystopper, checkpointer],
-                              batch_size=16, use_multiprocessing=True,
+                              batch_size=self.batch_size, use_multiprocessing=True,
                               epochs=100,
                               shuffle=True)
 
@@ -314,42 +315,64 @@ class UNetPP:
             of black and white pixels edge or no edge, for each of the data sets.
         """
 
-        if not os.path.exists("./Data/Train/Prediction"):
-            os.makedirs("./Data/Train/Prediction")
+        # if not os.path.exists("./Data/Train/Prediction"):
+        #     os.makedirs("./Data/Train/Prediction")
+        #
+        # if not os.path.exists("./Data/Test/Prediction"):
+        #     os.makedirs("./Data/Test/Prediction")
+        #
+        # self.load_training_set()
+        # self.load_test_set()
+        #
+        # # Predict on train, val and test
+        # preds_train = self.model.predict(self.X_train[:int(self.X_train.shape[0] * 0.9)], verbose=1)
+        # preds_val = self.model.predict(self.X_train[int(self.X_train.shape[0] * 0.9):], verbose=1)
+        # preds_test = self.model.predict(self.X_test, verbose=1)
+        #
+        # # Threshold predictions
+        # preds_train_t = (preds_train > 0.5).astype(np.uint8)
+        # preds_val_t = (preds_val > 0.5).astype(np.uint8)
+        # preds_test_t = (preds_test > 0.5).astype(np.uint8)
+        #
+        # # Save training set predictions
+        # for i in range(len(preds_train)):
+        #     plt.imsave("./Data/Train/Prediction/prediction_{0}.png".format(i+1), np.squeeze(preds_train_t[i]), cmap='gray')
+        #
+        # # Save val set predictions
+        # for i in range(len(preds_val)):
+        #     plt.imsave("./Data/Train/Prediction/prediction_{0}.png".format(i + len(preds_train)),
+        #                np.squeeze(preds_val_t[i]), cmap='gray')
+        #
+        # # Save test set predictions
+        # for i in range(len(preds_test)):
+        #     plt.imsave("./Data/Test/Prediction/prediction_{0}.png".format(i + 1),
+        #                np.squeeze(preds_test_t[i]), cmap='gray')
+        #
+        # print("Program finished running. Predictions saved.")
+        #
+        # return preds_train_t, preds_val_t, preds_test_t
 
-        if not os.path.exists("./Data/Test/Prediction"):
-            os.makedirs("./Data/Test/Prediction")
 
-        self.load_training_set()
-        self.load_test_set()
 
-        # Predict on train, val and test
-        preds_train = self.model.predict(self.X_train[:int(self.X_train.shape[0] * 0.9)], verbose=1)
-        preds_val = self.model.predict(self.X_train[int(self.X_train.shape[0] * 0.9):], verbose=1)
-        preds_test = self.model.predict(self.X_test, verbose=1)
+        # Load real data
 
-        # Threshold predictions
-        preds_train_t = (preds_train > 0.5).astype(np.uint8)
-        preds_val_t = (preds_val > 0.5).astype(np.uint8)
-        preds_test_t = (preds_test > 0.5).astype(np.uint8)
+        N_real_data = len(os.listdir('./Data/Real_Data/Input'))  # Number of test examples
+        X_real = np.zeros((N_real_data, self.IMG_HEIGHT, self.IMG_WIDTH, self.IMG_CHANNELS))
 
-        # Save training set predictions
-        for i in range(len(preds_train)):
-            plt.imsave("./Data/Train/Prediction/prediction_{0}.png".format(i+1), np.squeeze(preds_train_t[i]), cmap='gray')
+        for i in range(N_real_data):
+            x_image = Image.open('./Data/Real_Data/Input/real_data_{0}.png'.format(i + 1)).convert("RGB").resize(
+                (self.IMG_WIDTH, self.IMG_HEIGHT))
+            x = np.array(x_image)
+            X_real[i] = x
 
-        # Save val set predictions
-        for i in range(len(preds_val)):
-            plt.imsave("./Data/Train/Prediction/prediction_{0}.png".format(i + len(preds_train)),
-                       np.squeeze(preds_val_t[i]), cmap='gray')
+        preds_real = self.model.predict(X_real, verbose=1)
+        preds_real_t = (preds_real > 0.5).astype(np.uint8)
 
-        # Save test set predictions
-        for i in range(len(preds_test)):
-            plt.imsave("./Data/Test/Prediction/prediction_{0}.png".format(i + 1),
-                       np.squeeze(preds_test_t[i]), cmap='gray')
+        # Save real data predictions
+        for i in range(len(preds_real)):
+            plt.imsave('./Data/Real_Data/Output/real_data_{0}.png'.format(i+1), np.squeeze(preds_real_t[i]), cmap='gray')
 
-        print("Program finished running. Predictions saved.")
-
-        return preds_train_t, preds_val_t, preds_test_t
+        return True
 
     def evaluate(self):
         """
@@ -359,7 +382,8 @@ class UNetPP:
             self.model.evaluate: The evaluated metrics of the model's performance using the test set.
         """
         self.load_test_set()
-        return self.model.evaluate(self.X_test, self.Y_test, use_multiprocessing = True)
+
+        return self.model.evaluate(self.X_test[:1000], self.Y_test[:1000], use_multiprocessing = True, batch_size=self.batch_size)
 
     def summary(self):
         """

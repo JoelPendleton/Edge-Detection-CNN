@@ -25,6 +25,7 @@ class AutoEncoder2:
     IMG_WIDTH = 512
     IMG_HEIGHT = 512
     IMG_CHANNELS = 1
+    batch_size = 16
 
     N_test = len(os.listdir('./Data/Test/Input'))  # Number of test examples
     N_train = len(os.listdir('./Data/Train/Input'))  # Number of training examples
@@ -196,7 +197,7 @@ class AutoEncoder2:
             self.model.evaluate: The evaluated metrics of the model's performance using the test set.
         """
         self.load_test_set()
-        return self.model.evaluate(self.X_test, self.Y_test, use_multiprocessing=True)
+        return self.model.evaluate(self.X_test[:1000], self.Y_test[:1000], use_multiprocessing = True, batch_size=self.batch_size)
 
     def summary(self):
         """

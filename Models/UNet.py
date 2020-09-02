@@ -28,6 +28,7 @@ class UNet:
     IMG_WIDTH = 512
     IMG_HEIGHT = 512
     IMG_CHANNELS = 3
+    batch_size = 64
 
     N_test = len(os.listdir('./Data/Test/Input'))  # Number of test examples
     N_train = len(os.listdir('./Data/Train/Input'))  # Number of training examples
@@ -193,9 +194,9 @@ class UNet:
             results: the results of the trained CNN.
         """
         self.load_training_set()
-        earlystopper = EarlyStopping(patience=30, verbose=1)
+        earlystopper = EarlyStopping(patience=10, verbose=1)
         checkpointer = ModelCheckpoint('./Checkpoints/model_unet_checkpoint.h5', verbose=1, save_best_only=True)
-        results = self.model.fit(self.X_train, self.Y_train, validation_split=0.1, batch_size=64, epochs=100,
+        results = self.model.fit(self.X_train, self.Y_train, validation_split=0.1, batch_size=self.batch_size, epochs=100,
                                  shuffle=True, use_multiprocessing=True, callbacks=[earlystopper, checkpointer])
 
         print("Program finished running. The CNN has been trained.")
@@ -256,7 +257,7 @@ class UNet:
             self.model.evaluate: The evaluated metrics of the model's performance using the test set.
         """
         self.load_test_set()
-        return self.model.evaluate(self.X_test, self.Y_test, use_multiprocessing = True)
+        return self.model.evaluate(self.X_test[:1000], self.Y_test[:1000], use_multiprocessing = True, batch_size=self.batch_size)
 
     def summary(self):
         """
