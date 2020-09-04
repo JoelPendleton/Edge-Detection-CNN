@@ -14,7 +14,6 @@ import matplotlib.pyplot as plt
 
 
 
-
 def conv2d(filters: int):
     return Conv2D(filters=filters,
                   kernel_size=(3, 3),
@@ -38,17 +37,15 @@ class UNetPP:
         IMG_WIDTH (int): the width of the input images in pixels
         IMG_HEIGHT (int): the height of the input images in pixels
         IMG_CHANNELS (int): the number of colour channels of images
-        number_of_filters (int): the number of filters to use in the model
-        N_test (int): the number of examples in the test set
-        N_train (int):  the number of examples in the training set
+
     """
 
     # Set some parameters
-    number_of_filters = 16
     IMG_WIDTH = 512
     IMG_HEIGHT = 512
-    IMG_CHANNELS = 1
-    batch_size = 2
+    IMG_CHANNELS = 3
+    batch_size = 16
+    number_of_filters = 2 #keep at 2
 
     N_test = len(os.listdir('./Data/Test/Input'))  # Number of test examples
     N_train = len(os.listdir('./Data/Train/Input'))  # Number of training examples
@@ -60,8 +57,10 @@ class UNetPP:
        Parameters:
           model (object): object containing all the information to utilise the neural network.
        """
-        mirrored_strategy = tf.distribute.MirroredStrategy()
+
+
         model_exists = os.path.exists('./Checkpoints/model_unetpp_checkpoint.h5')
+        mirrored_strategy = tf.distribute.MirroredStrategy()
 
         if model_exists:  # If model has already been trained, load model
             with mirrored_strategy.scope():
@@ -227,22 +226,20 @@ class UNetPP:
 
             self.model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
-
-
     def load_training_set(self):
         """
-        The function to load training examples for CNN and put them inside self.X_train and self.Y_train.
+         The function to load training examples for CNN and put them inside self.X_train and self.Y_train.
 
-        Returns:
-           True upon completion
-        """
+         Returns:
+            True upon completion
+         """
         # Define dimensions of examples
         self.X_train = np.zeros((self.N_train, self.IMG_HEIGHT, self.IMG_WIDTH, self.IMG_CHANNELS))
-        self.Y_train = np.zeros((self.N_train, self.IMG_HEIGHT, self.IMG_WIDTH,  1))
+        self.Y_train = np.zeros((self.N_train, self.IMG_HEIGHT, self.IMG_WIDTH, 1))
 
         # Load in training examples
         for i in range(self.N_train):
-            x_image = Image.open('./Data/Train/Input/input_{0}.png'.format(i + 1)).convert("L").resize(
+            x_image = Image.open('./Data/Train/Input/input_{0}.png'.format(i + 1)).convert("RGB").resize(
                 (self.IMG_WIDTH, self.IMG_HEIGHT))
             x = np.array(x_image)
             self.X_train[i] = x
@@ -252,7 +249,7 @@ class UNetPP:
             # convert("L") reduces to single channel greyscale, resize reduces resolution to IMG_WIDTH x IMG_HEIGHT
             y = (np.array(y_image) / 255 == 1)  # divide by 255 as np.array puts white as 255 and black as 0.
             # Use == 1 to convert to boolean
-            y = np.reshape(np.array(y), (self.IMG_HEIGHT, self.IMG_WIDTH,  1))
+            y = np.reshape(np.array(y), (self.IMG_HEIGHT, self.IMG_WIDTH, 1))
             self.Y_train[i] = y  # Add training output to array
 
         return True
@@ -270,7 +267,7 @@ class UNetPP:
         # Load in test set
 
         for i in range(self.N_test):
-            x_image = Image.open('./Data/Test/Input/input_{0}.png'.format(i + 1)).convert("L").resize(
+            x_image = Image.open('./Data/Test/Input/input_{0}.png'.format(i + 1)).convert("RGB").resize(
                 (self.IMG_WIDTH, self.IMG_HEIGHT))
             x = np.array(x_image)
             self.X_test[i] = x
@@ -285,26 +282,23 @@ class UNetPP:
 
         return True
 
+
     def train(self):
         """
-          The function to train the CNN using training examples.
+        The function to train the CNN using training examples.
 
-          Returns:
-              results: the results of the trained CNN.
-          """
+        Returns:
+            results: the results of the trained CNN.
+        """
         self.load_training_set()
         earlystopper = EarlyStopping(patience=10, verbose=1)
         checkpointer = ModelCheckpoint('./Checkpoints/model_unetpp_checkpoint.h5', verbose=1, save_best_only=True)
-        results = self.model.fit(self.X_train, self.Y_train,
-                              validation_split=0.05,callbacks=[earlystopper, checkpointer],
-                              batch_size=self.batch_size, use_multiprocessing=True,
-                              epochs=100,
-                              shuffle=True)
+        results = self.model.fit(self.X_train, self.Y_train, validation_split=0.1, batch_size=self.batch_size, epochs=100,
+                                 shuffle=True, use_multiprocessing=True, callbacks=[earlystopper, checkpointer])
 
         print("Program finished running. The CNN has been trained.")
 
         return results
-
 
     def predict(self):
         """
@@ -315,64 +309,42 @@ class UNetPP:
             of black and white pixels edge or no edge, for each of the data sets.
         """
 
-        # if not os.path.exists("./Data/Train/Prediction"):
-        #     os.makedirs("./Data/Train/Prediction")
-        #
-        # if not os.path.exists("./Data/Test/Prediction"):
-        #     os.makedirs("./Data/Test/Prediction")
-        #
-        # self.load_training_set()
-        # self.load_test_set()
-        #
-        # # Predict on train, val and test
-        # preds_train = self.model.predict(self.X_train[:int(self.X_train.shape[0] * 0.9)], verbose=1)
-        # preds_val = self.model.predict(self.X_train[int(self.X_train.shape[0] * 0.9):], verbose=1)
-        # preds_test = self.model.predict(self.X_test, verbose=1)
-        #
-        # # Threshold predictions
-        # preds_train_t = (preds_train > 0.5).astype(np.uint8)
-        # preds_val_t = (preds_val > 0.5).astype(np.uint8)
-        # preds_test_t = (preds_test > 0.5).astype(np.uint8)
-        #
-        # # Save training set predictions
-        # for i in range(len(preds_train)):
-        #     plt.imsave("./Data/Train/Prediction/prediction_{0}.png".format(i+1), np.squeeze(preds_train_t[i]), cmap='gray')
-        #
-        # # Save val set predictions
-        # for i in range(len(preds_val)):
-        #     plt.imsave("./Data/Train/Prediction/prediction_{0}.png".format(i + len(preds_train)),
-        #                np.squeeze(preds_val_t[i]), cmap='gray')
-        #
-        # # Save test set predictions
-        # for i in range(len(preds_test)):
-        #     plt.imsave("./Data/Test/Prediction/prediction_{0}.png".format(i + 1),
-        #                np.squeeze(preds_test_t[i]), cmap='gray')
-        #
-        # print("Program finished running. Predictions saved.")
-        #
-        # return preds_train_t, preds_val_t, preds_test_t
+        if not os.path.exists("./Data/Train/Prediction"):
+            os.makedirs("./Data/Train/Prediction")
 
+        if not os.path.exists("./Data/Test/Prediction"):
+            os.makedirs("./Data/Test/Prediction")
 
+        self.load_training_set()
+        self.load_test_set()
 
-        # Load real data
+        # Predict on train, val and test
+        preds_train = self.model.predict(self.X_train[:int(self.X_train.shape[0] * 0.9)], verbose=1)
+        preds_val = self.model.predict(self.X_train[int(self.X_train.shape[0] * 0.9):], verbose=1)
+        preds_test = self.model.predict(self.X_test, verbose=1)
 
-        N_real_data = len(os.listdir('./Data/Real_Data/Input'))  # Number of test examples
-        X_real = np.zeros((N_real_data, self.IMG_HEIGHT, self.IMG_WIDTH, self.IMG_CHANNELS))
+        # Threshold predictions
+        preds_train_t = (preds_train > 0.5).astype(np.uint8)
+        preds_val_t = (preds_val > 0.5).astype(np.uint8)
+        preds_test_t = (preds_test > 0.5).astype(np.uint8)
 
-        for i in range(N_real_data):
-            x_image = Image.open('./Data/Real_Data/Input/real_data_{0}.png'.format(i + 1)).convert("RGB").resize(
-                (self.IMG_WIDTH, self.IMG_HEIGHT))
-            x = np.array(x_image)
-            X_real[i] = x
+        # Save training set predictions
+        for i in range(len(preds_train)):
+            plt.imsave("./Data/Train/Prediction/prediction_{0}.png".format(i+1), np.squeeze(preds_train_t[i]), cmap='gray')
 
-        preds_real = self.model.predict(X_real, verbose=1)
-        preds_real_t = (preds_real > 0.5).astype(np.uint8)
+        # Save val set predictions
+        for i in range(len(preds_val)):
+            plt.imsave("./Data/Train/Prediction/prediction_{0}.png".format(i + len(preds_train)),
+                       np.squeeze(preds_val_t[i]), cmap='gray')
 
-        # Save real data predictions
-        for i in range(len(preds_real)):
-            plt.imsave('./Data/Real_Data/Output/real_data_{0}.png'.format(i+1), np.squeeze(preds_real_t[i]), cmap='gray')
+        # Save test set predictions
+        for i in range(len(preds_test)):
+            plt.imsave("./Data/Test/Prediction/prediction_{0}.png".format(i + 1),
+                       np.squeeze(preds_test_t[i]), cmap='gray')
 
-        return True
+        print("Program finished running. Predictions saved.")
+
+        return preds_train_t, preds_val_t, preds_test_t
 
     def evaluate(self):
         """
@@ -382,7 +354,6 @@ class UNetPP:
             self.model.evaluate: The evaluated metrics of the model's performance using the test set.
         """
         self.load_test_set()
-
         return self.model.evaluate(self.X_test[:1000], self.Y_test[:1000], use_multiprocessing = True, batch_size=self.batch_size)
 
     def summary(self):
@@ -393,7 +364,5 @@ class UNetPP:
             self.model.summary(): summary of model
         """
         return self.model.summary()
-
-
 
 
