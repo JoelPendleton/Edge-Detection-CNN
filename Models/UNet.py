@@ -31,7 +31,7 @@ class UNet:
     batch_size = 16
 
     N_test = len(os.listdir('./Data/Test/Input'))  # Number of test examples
-    N_train = 100# len(os.listdir('./Data/Train/Input'))  # Number of training examples
+    N_train = len(os.listdir('./Data/Train/Input'))  # Number of training examples
 
     def __init__(self):
         """

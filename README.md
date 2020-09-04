@@ -24,11 +24,9 @@ The allowed values for **[Command]** and **[Architecture]** arguments/flags are 
     </tr>
      <tr>
       <td>Summary</td>
-      <td>AutoEncoder1</td>
     </tr>
      <tr>
       <td>Evaluate</td>
-      <td>AutoEncoder2</td>
     </tr>
      <tr>
       <td>Predict</td>
