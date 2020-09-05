@@ -28,7 +28,7 @@ class UNet:
     IMG_WIDTH = 512
     IMG_HEIGHT = 512
     IMG_CHANNELS = 3
-    batch_size = 16
+    batch_size = 32
 
     N_test = len(os.listdir('./Data/Test/Input'))  # Number of test examples
     N_train = len(os.listdir('./Data/Train/Input'))  # Number of training examples

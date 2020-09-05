@@ -44,7 +44,7 @@ class UNetPP:
     IMG_WIDTH = 512
     IMG_HEIGHT = 512
     IMG_CHANNELS = 3
-    batch_size = 16
+    batch_size = 2
     number_of_filters = 2 #keep at 2
 
     N_test = len(os.listdir('./Data/Test/Input'))  # Number of test examples

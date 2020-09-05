@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import cv2
 import json
 img = cv2.imread('../Data/Real_Data/Input/output_1.png')
@@ -56,6 +55,8 @@ def get_intersect(a1, a2, b1, b2):
 V_SD_max = 0.2
 V_G_min = 0.005
 V_G_max = 1.2
+V_G_per_pixel = (V_G_max - V_G_min) / img.shape[1]
+V_SD_per_pixel = V_SD_max / img.shape[0]
 
 line_data = {}  # create 'data' dictonary to store json data
 line_data['positive lines'] = []
@@ -183,11 +184,48 @@ for line in lines:  # for each of the lines found through the hough transform
     cv2.imwrite('houghlines.jpg',img)
 
 
-# Find the heights of the diamonds by looking at intersection of positive and negative sloped lines
 diamond_data = {}
+diamond_data['heights'] = []
+diamond_data['widths'] = []
+diamond_data['positive slopes'] = []
+diamond_data['negative slopes'] = []
 
-# Find widths of diamonds by looking at line intercepts
+
+for i in range(len(line_data['positive lines'])-1): # for each item in positive lines excluding last item
+
+    # Height of diamonds is found by intersection of positive line and next negative line
+
+    # Get coordinates for points on lines
+    pos_line = line_data['positive lines'][i]
+    pos_line_a1 = pos_line["coordinate 1"]
+    pos_line_a2 = pos_line["coordinate 2"]
+    neg_line = line_data['negative lines'][i+1]
+    neg_line_b1 = neg_line["coordinate 1"]
+    neg_line_b2 = neg_line["coordinate 2"]
+
+    intersection_y = get_intersect(pos_line_a1, pos_line_a2, neg_line_b1, neg_line_b2)[1] # find the intersect of lines
+
+    diamond_data['heights'].append((y_axis_index - intersection_y) * V_SD_per_pixel)
+
+    # Find widths of diamonds by looking at line intercepts
+    diamond_data['widths'].append((positive_x_intercepts[i+1] - positive_x_intercepts[i]) * V_G_per_pixel)
+
+    # Add slopes of lines
+    diamond_data["negative slopes"].append(line_data["negative lines"][i]["gradient"])
+    diamond_data["positive slopes"].append(pos_line["gradient"])
+
+
+# Add slopes of lines
+diamond_data["negative slopes"].append(line_data["negative lines"][-1]["gradient"])
+diamond_data["positive slopes"].append(line_data["positive lines"][-1]["gradient"])
 
 # save parameters in JSON format to txt file
 with open('line-data.txt', 'w') as outfile:
     json.dump(line_data, outfile, indent=4)
+
+# save parameters in JSON format to txt file
+with open('diamond-data.txt', 'w') as outfile:
+    json.dump(diamond_data, outfile, indent=4)
+
+# NOTE: diamond-data.txt is written in correct units (in terms of volts).
+# line-data.txt is not written in terms of units just image pixel coordinates

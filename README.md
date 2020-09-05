@@ -26,11 +26,9 @@ The allowed values for **[Command]** and **[Architecture]** arguments/flags are 
       <td>Summary</td>
     </tr>
      <tr>
-      <td>Evaluate</td>
-    </tr>
+      <td>Evaluate</td>    </tr>
      <tr>
       <td>Predict</td>
-      <td></td>
     </tr>
 </table>
 
