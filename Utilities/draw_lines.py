@@ -5,6 +5,7 @@ img = cv2.imread('../Data/Real_Data/Input/output_1.png')
 
 y_axis_index = int((img.shape[0] / 2 - 1))  # index middle of image (vertically)
 
+threshold = 20  # adjust to limit closeness of lines
 
 def gradient(a1, a2):
     """
@@ -104,7 +105,7 @@ def position_checker(x_intercept, x_intercepts_list):
     :return: False if too close to line. If not too close to existing lines return True
     """
     for intercept in x_intercepts_list: # for each of the line in list
-        if abs(x_intercept - intercept) < 20: # is the new line within 20px of this line's x-intercept
+        if abs(x_intercept - intercept) < threshold: # is the new line within 20px of this line's x-intercept
             return False
         else:
             continue
