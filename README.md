@@ -5,7 +5,7 @@ Object Contour Detection / Edge Detection CNN using Tensorflow 2 using the U-Net
 * UNet++ Paper: https://arxiv.org/abs/1807.10165  
 
 To install the required environment install anaconda and run the following commands:
-```conda env create -f environment.yml ```
+```conda env create -f environment.yml``` and then ```conda activate tensorflow```
 
 To run the neural network execute the following command in the command line:
 ```python main.py --[Command] --[Architecture]```
