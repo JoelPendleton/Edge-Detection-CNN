@@ -10,9 +10,13 @@ threshold = 20  # adjust to limit closeness of lines
 def gradient(a1, a2):
     """
     Function to calculate the gradient of a line.
-    :param a1: [x, y] a point on the line
-    :param a2: [x, y] another point on the  line
-    :return: gradient of the line
+
+    Parameters:
+        a1: [x, y] a point on the line
+        a2: [x, y] another point on the line
+
+    Returns:
+        gradient of the line
     """
 
     return (a2[1] - a1[1]) / (a2[0] - a1[0])
@@ -21,9 +25,12 @@ def gradient(a1, a2):
 def find_x_intercept(a1, a2):
     """
     Function to find where the line intersects the x-axis.
-    :param a1: [x, y] a point on the line
-    :param a2: [x, y] another point on the  line
-    :return: x-intercept of line
+
+    Parameters:
+        a1: [x, y] a point on the line
+        a2: [x, y] another point on the  line
+    Returns:
+        x-intercept of line
     """
     x_1 = a1[0]
     y_1 = a1[1]
@@ -36,11 +43,15 @@ def find_x_intercept(a1, a2):
 def get_intersect(a1, a2, b1, b2):
     """
     Function to find the point of intersection of two lines.
-    :param a1: [x, y] a point on the first line
-    :param a2: [x, y] another point on the first line
-    :param b1: [x, y] a point on the second line
-    :param b2: [x, y] another point on the second line
-    :return: the point of intersection of the lines passing through a2, a1 and b2, b1.
+
+    Parameters:
+        a1: [x, y] a point on the first line
+        a2: [x, y] another point on the first line
+        b1: [x, y] a point on the second line
+        b2: [x, y] another point on the second line
+
+    Returns:
+        the point of intersection of the lines passing through a2, a1 and b2, b1.
     """
 
     s = np.vstack([a1,a2,b1,b2])        # s for stacked
@@ -78,9 +89,12 @@ negative_x_intercepts = []
 def insert(list, n):
     """
     Function to insert item into numerically ascending list.
-    :param list: list to insert into
-    :param n: the item to be inserted
-    :return: the sorted list, and the index i where the item was inserted.
+
+    Parameters:
+        list: list to insert into
+        n: the item to be inserted
+    Returns:
+        the sorted list, and the index i where the item was inserted.
     """
     # Searching for the position
     if len(list) > 0:
@@ -100,9 +114,13 @@ def insert(list, n):
 def position_checker(x_intercept, x_intercepts_list):
     """
     Function to check whether next line to be plotted is too close to existing lines.
-    :param x_intercept: current x-intercept to be tested
-    :param x_intercepts_list: positive or negative sloped lines to check against
-    :return: False if too close to line. If not too close to existing lines return True
+
+    Parameters:
+        x_intercept: current x-intercept to be tested
+        x_intercepts_list: positive or negative sloped lines to check against
+
+    Returns:
+        False if too close to line. If not too close to existing lines return True
     """
     for intercept in x_intercepts_list: # for each of the line in list
         if abs(x_intercept - intercept) < threshold: # is the new line within 20px of this line's x-intercept

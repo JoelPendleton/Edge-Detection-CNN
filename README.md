@@ -26,7 +26,8 @@ The allowed values for **[Command]** and **[Architecture]** arguments/flags are 
       <td>Summary</td>
     </tr>
      <tr>
-      <td>Evaluate</td>    </tr>
+      <td>Evaluate</td>    
+      </tr>
      <tr>
       <td>Predict</td>
     </tr>
@@ -56,7 +57,7 @@ Example of CNN prediction and draw_lines functionality:
       <th>Drawn Lines</th>
     </tr>
     <tr>
-      <td>IMG</td>
-      <td>IMG</td>
+      <td><img src="draw_lines_example.png"></td>
+      <td><img src="draw_lines_example_2.jpg"></td>
     </tr>
 </table>

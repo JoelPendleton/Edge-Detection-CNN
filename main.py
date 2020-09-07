@@ -1,7 +1,5 @@
 import sys
 from Models.UNet import UNet
-from Models.AutoEncoder1 import AutoEncoder1
-from Models.AutoEncoder2 import AutoEncoder2
 from Models.UNetPP import UNetPP
 
 try:
@@ -22,12 +20,6 @@ elif command == "--Train" or command == "--Predict":
         if architecture == '--UNet':
             UNet = UNet()
             UNet.train()
-        elif architecture == '--AutoEncoder1':
-            AutoEncoder1 = AutoEncoder1()
-            AutoEncoder1.train()
-        elif architecture == '--AutoEncoder2':
-            AutoEncoder2 = AutoEncoder2()
-            AutoEncoder2.train()
         elif architecture == '--UNet++':
             UNetPP = UNetPP()
             UNetPP.train()
@@ -38,12 +30,6 @@ elif command == "--Train" or command == "--Predict":
         if architecture == '--UNet':
             UNet = UNet()
             UNet.predict()
-        elif architecture == '--AutoEncoder1':
-            AutoEncoder1 = AutoEncoder1()
-            AutoEncoder1.predict()
-        elif architecture == '--AutoEncoder2':
-            AutoEncoder2 = AutoEncoder2()
-            AutoEncoder2.predict()
         elif architecture == '--UNet++':
             UNetPP = UNetPP()
             UNetPP.predict()
@@ -59,12 +45,6 @@ elif command == "--Summary":
     if architecture == '--UNet':
         UNet = UNet()
         UNet.summary()
-    elif architecture == '--AutoEncoder1':
-        AutoEncoder1 = AutoEncoder1()
-        AutoEncoder1.summary()
-    elif architecture == '--AutoEncoder2':
-        AutoEncoder2 = AutoEncoder2()
-        AutoEncoder2.summary()
     elif architecture == '--UNet++':
         UNetPP = UNetPP()
         UNetPP.summary()
@@ -77,12 +57,6 @@ elif command == "--Evaluate":
     if architecture == '--UNet':
         UNet = UNet()
         UNet.evaluate()
-    elif architecture == '--AutoEncoder1':
-        AutoEncoder1 = AutoEncoder1()
-        AutoEncoder1.evaluate()
-    elif architecture == '--AutoEncoder2':
-        AutoEncoder2 = AutoEncoder2()
-        AutoEncoder2.evaluate()
     elif architecture == '--UNet++':
         UNetPP = UNetPP()
         UNetPP.evaluate()
