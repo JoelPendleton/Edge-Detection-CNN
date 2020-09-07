@@ -57,7 +57,7 @@ Example of CNN prediction and draw_lines functionality:
       <th>Drawn Lines</th>
     </tr>
     <tr>
-      <td><img src="draw_lines_example.png"></td>
-      <td><img src="draw_lines_example_2.jpg"></td>
+      <td><img src="draw_lines_example_1.png", width = "500px"></td>
+      <td><img src="draw_lines_example_2.jpg", width = "500px"></td>
     </tr>
 </table>
