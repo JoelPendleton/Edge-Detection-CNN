@@ -43,6 +43,8 @@ The allowed values for **[Command]** and **[Architecture]** arguments/flags are 
 * **Evaluate** gives the accuracy of the model on the test set.
 * **Predict** generates images of the edges as predicted by the model.
 
+To use existing training examples. Simply copy this folder of training examples, into the root of this repository: https://www.dropbox.com/sh/sgnn7zfz5txsfym/AACQtrt7UbPupLiQvhVAzg4ka?dl=0 
+
 To extract the parameters from the prediction produced by the network, run the following command from the Utilities/ folder:
 ```python draw_lines.py```
 
