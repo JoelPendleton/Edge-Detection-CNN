@@ -4,6 +4,9 @@ Object Contour Detection / Edge Detection CNN using Tensorflow 2 using the U-Net
 * UNet Paper: https://arxiv.org/abs/1505.04597
 * UNet++ Paper: https://arxiv.org/abs/1807.10165  
 
+To install the required environment install anaconda and run the following commands:
+```conda env create -f environment.yml``` and then ```conda activate tensorflow```
+
 To run the neural network execute the following command in the command line:
 ```python main.py --[Command] --[Architecture]```
 
@@ -39,6 +42,8 @@ The allowed values for **[Command]** and **[Architecture]** arguments/flags are 
 * **Summary** outputs a summary of the architecture of the model.
 * **Evaluate** gives the accuracy of the model on the test set.
 * **Predict** generates images of the edges as predicted by the model.
+
+**To use existing training examples**. Simply copy this folder of training examples (called 'Data'), into the root of this repository: https://www.dropbox.com/sh/sgnn7zfz5txsfym/AACQtrt7UbPupLiQvhVAzg4ka?dl=0 
 
 To extract the parameters from the prediction produced by the network, run the following command from the Utilities/ folder:
 ```python draw_lines.py```
