@@ -45,7 +45,7 @@ class UNetPP:
     IMG_HEIGHT = 512
     IMG_CHANNELS = 3
     batch_size = 2
-    number_of_filters = 2 #keep at 2
+    number_of_filters = 2  # keep at 2
 
     N_test = len(os.listdir('./Data/Test/Input'))  # Number of test examples
     N_train = len(os.listdir('./Data/Train/Input'))  # Number of training examples
@@ -59,13 +59,13 @@ class UNetPP:
        """
 
 
-        model_exists = os.path.exists('./Checkpoints/model_unetpp_checkpoint.h5')
+        model_exists = os.path.exists('./Checkpoints/UNet++/{0}-UNetPP.h5'.format(UNetPP.batch_size))
         mirrored_strategy = tf.distribute.MirroredStrategy()
 
         if model_exists:  # If model has already been trained, load model
             with mirrored_strategy.scope():
 
-                self.model = load_model('./Checkpoints/model_unetpp_checkpoint.h5')
+                self.model = load_model('./Checkpoints/UNet++/{0}-UNetPP.h5'.format(UNetPP.batch_size))
         else:  # If model hasn't been trained create model
             with mirrored_strategy.scope():
 
@@ -292,7 +292,7 @@ class UNetPP:
         """
         self.load_training_set()
         earlystopper = EarlyStopping(patience=10, verbose=1)
-        checkpointer = ModelCheckpoint('./Checkpoints/model_unetpp_checkpoint.h5', verbose=1, save_best_only=True)
+        checkpointer = ModelCheckpoint('./Checkpoints/UNet++/{0}-UNetPP.h5'.format(UNetPP.batch_size), verbose=1, save_best_only=True)
         results = self.model.fit(self.X_train, self.Y_train, validation_split=0.1, batch_size=self.batch_size, epochs=100,
                                  shuffle=True, use_multiprocessing=True, callbacks=[earlystopper, checkpointer])
 
