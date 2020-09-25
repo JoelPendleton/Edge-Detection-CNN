@@ -34,9 +34,9 @@ elif command == "--Train" or command == "--Predict":
             UNetPP = UNetPP()
             UNetPP.predict()
         else:
-            raise Exception("You have passed an invalid argument.\nCheck the documentation for the allowed arguments.")
+            raise Exception("You have passed an invalid argument.Check the documentation for the allowed arguments.")
     else:
-        raise Exception("You have passed an invalid argument.\nCheck the documentation for the allowed arguments.")
+        raise Exception("You have passed an invalid argument. Check the documentation for the allowed arguments.")
 
 
 elif command == "--Summary":
@@ -49,7 +49,7 @@ elif command == "--Summary":
         UNetPP = UNetPP()
         UNetPP.summary()
     else:
-        raise Exception("You have passed an invalid argument.\nCheck the documentation for the allowed arguments.")
+        raise Exception("You have passed an invalid argument.Check the documentation for the allowed arguments.")
 
 elif command == "--Evaluate":
     architecture = sys.argv[2]
@@ -61,7 +61,7 @@ elif command == "--Evaluate":
         UNetPP = UNetPP()
         UNetPP.evaluate()
     else:
-        raise Exception("You have passed an invalid argument.\nCheck the documentation for the allowed arguments.")
+        raise Exception("You have passed an invalid argument.Check the documentation for the allowed arguments.")
 
 else:
-    raise Exception("You have passed an invalid argument.\nCheck the documentation for the allowed arguments.")
+    raise Exception("You have passed an invalid argument.Check the documentation for the allowed arguments.")

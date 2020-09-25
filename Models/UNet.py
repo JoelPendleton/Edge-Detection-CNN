@@ -44,13 +44,13 @@ class UNet:
         # seed random number generator
         random.seed(datetime.now())  # use current time as random number seed
 
-        model_exists = os.path.exists('./Checkpoints/model_unet_checkpoint.h5')
+        model_exists = os.path.exists('./Checkpoints/UNet/{0}-UNet.h5'.format(UNet.batch_size))
         mirrored_strategy = tf.distribute.MirroredStrategy()
 
         if model_exists:  # If model has already been trained, load model
             with mirrored_strategy.scope():
 
-                self.model = load_model('./Checkpoints/model_unet_checkpoint.h5')
+                self.model = load_model('./Checkpoints/UNet/{0}-UNet.h5'.format(UNet.batch_size))
         else:  # If model hasn't been trained create model
             with mirrored_strategy.scope():
 
@@ -195,7 +195,7 @@ class UNet:
         """
         self.load_training_set()
         earlystopper = EarlyStopping(patience=10, verbose=1)
-        checkpointer = ModelCheckpoint('./Checkpoints/model_unet_checkpoint.h5', verbose=1, save_best_only=True)
+        checkpointer = ModelCheckpoint('./Checkpoints/UNet/{0}-UNet.h5'.format(UNet.batch_size), verbose=1, save_best_only=True)
         results = self.model.fit(self.X_train, self.Y_train, validation_split=0.1, batch_size=self.batch_size, epochs=100,
                                  shuffle=True, use_multiprocessing=True, callbacks=[earlystopper, checkpointer])
 
