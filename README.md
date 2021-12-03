@@ -1,4 +1,4 @@
-# Edge-Detection-CNN
+# Edge Detection CNN
 Edge Detection CNN using Tensorflow 2 using the U-Net and UNet++ architectures.
 
 * UNet Paper: https://arxiv.org/abs/1505.04597
